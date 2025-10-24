@@ -72,7 +72,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count by (current_rom) (device_info)",
+          "expr": "count by (current_rom) (device_rom_info)",
           "legendFormat": "{{current_rom}}",
           "refId": "A"
         }
@@ -200,7 +200,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(device_connected) / count(device_info)",
+          "expr": "sum(device_connection_status) / count(device_info)",
           "legendFormat": "Online Ratio",
           "refId": "A"
         }
@@ -388,7 +388,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_info",
+          "expr": "device_connection_status",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
@@ -398,7 +398,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_connected",
+          "expr": "device_uptime_seconds",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "B"
@@ -408,7 +408,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_uptime_seconds",
+          "expr": "device_heap_free_bytes",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "C"
@@ -418,10 +418,30 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_heap_free_bytes",
+          "expr": "device_rom_info",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_git_version_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_soc_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "F"
         }
       ],
       "title": "Device Inventory",
@@ -439,29 +459,47 @@
               "Time": true,
               "__name__": true,
               "instance": true,
-              "job": true
+              "job": true,
+              "Value #D": true,
+              "Value #E": true,
+              "Value #F": true,
+              "device_ip 1": true,
+              "device_ip 2": true,
+              "device_ip 3": true,
+              "device_ip 4": true,
+              "device_ip 5": true,
+              "device_name 1": true,
+              "device_name 2": true,
+              "device_name 3": true,
+              "device_name 4": true,
+              "device_name 5": true,
+              "deviceid 1": true,
+              "deviceid 2": true,
+              "deviceid 3": true,
+              "deviceid 4": true,
+              "deviceid 5": true
             },
             "indexByName": {
-              "device_name": 1,
-              "deviceid": 0,
-              "ip": 2,
-              "current_rom": 3,
-              "git_version": 4,
-              "Value #A": 5,
-              "Value #B": 6,
-              "Value #C": 7,
-              "Value #D": 8
+              "device_name": 0,
+              "deviceid": 1,
+              "device_ip": 2,
+              "soc": 3,
+              "current_rom": 4,
+              "git_version": 5,
+              "Value #A": 6,
+              "Value #B": 7,
+              "Value #C": 8
             },
             "renameByName": {
-              "Value #A": "Info",
-              "Value #B": "Status", 
-              "Value #C": "Uptime",
-              "Value #D": "Free Memory",
-              "current_rom": "ROM Version",
+              "Value #A": "Status", 
+              "Value #B": "Uptime",
+              "Value #C": "Free Memory",
               "device_name": "Device Name",
               "deviceid": "Device ID",
               "git_version": "Git Version",
-              "ip": "IP Address"
+              "device_ip": "IP Address",
+              "current_rom": "ROM",
+              "soc": "SoC"
             }
           }
         }

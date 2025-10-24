@@ -2,48 +2,75 @@
 modules:
   default:
     metrics:
+    # Device basic info - always 1 when device is responding
     - name: device_info
-      type: object
-      help: Device information
-      path: '{}'
+      type: value
+      help: Device online status
+      path: '1'
+      labels:
+        deviceid: '{ .deviceid }'
+
+    # Device ID as a numeric value
+    - name: device_id_value
+      type: value
+      help: Device ID as a numeric value
+      path: '{ .deviceid }'
+      labels:
+        deviceid: '{ .deviceid }'
+
+    # Git version as info metric
+    - name: device_git_version_info
+      type: value
+      help: Git version information
+      path: '1'
+      labels:
+        deviceid: '{ .deviceid }'
+        git_version: '{ .git_version }'
+
+    # Current ROM information
+    - name: device_rom_info
+      type: value
+      help: Current ROM information
+      path: '1'
       labels:
         deviceid: '{ .deviceid }'
         current_rom: '{ .current_rom }'
-        git_version: '{ .git_version }'
-        build_type: '{ .build_type }'
-        git_date: '{ .git_date }'
-        webapp_version: '{ .webapp_version }'
-        sming: '{ .sming }'
-        soc: '{ .soc }'
-        ssid: '{ .connection.ssid }'
-        current_ip: '{ .connection.ip }'
-        mac: '{ .connection.mac }'
-        gateway: '{ .connection.gateway }'
-        netmask: '{ .connection.netmask }'
-        rgbww_version: '{ .rgbww.version }'
-      values:
-        info: 1
 
+    # SoC type as info metric  
+    - name: device_soc_info
+      type: value
+      help: System on Chip information
+      path: '1'
+      labels:
+        deviceid: '{ .deviceid }'
+        soc: '{ .soc }'
+
+    # Device IP address as info metric
+    - name: device_ip_info
+      type: value
+      help: Device IP address information
+      path: '1'
+      labels:
+        deviceid: '{ .deviceid }'
+        ip_address: '{ .connection.ip }'
+
+    # Device uptime in seconds
     - name: device_uptime_seconds
       type: value  
       help: Device uptime in seconds
       path: '{ .uptime }'
       labels:
         deviceid: '{ .deviceid }'
-        current_rom: '{ .current_rom }'
-        git_version: '{ .git_version }'
-        soc: '{ .soc }'
 
+    # Free heap memory in bytes
     - name: device_heap_free_bytes
       type: value
       help: Free heap memory in bytes  
       path: '{ .heap_free }'
       labels:
         deviceid: '{ .deviceid }'
-        current_rom: '{ .current_rom }'
-        git_version: '{ .git_version }'
-        soc: '{ .soc }'
 
+    # Number of event clients
     - name: device_event_clients
       type: value
       help: Number of event clients connected
@@ -51,16 +78,15 @@ modules:
       labels:
         deviceid: '{ .deviceid }'
 
+    # WiFi connection status
     - name: device_connection_status
       type: value
       help: Device WiFi connection status (1=connected, 0=disconnected)
       path: '{ .connection.connected }'
       labels:
         deviceid: '{ .deviceid }'
-        ssid: '{ .connection.ssid }'
-        current_ip: '{ .connection.ip }'
-        mac: '{ .connection.mac }'
 
+    # DHCP configuration
     - name: device_dhcp_enabled
       type: value
       help: Device DHCP configuration (1=enabled, 0=disabled)
@@ -68,10 +94,10 @@ modules:
       labels:
         deviceid: '{ .deviceid }'
 
+    # RGBWW queue size
     - name: device_rgbww_queue_size
       type: value
       help: RGBWW queue size
       path: '{ .rgbww.queuesize }'
       labels:
         deviceid: '{ .deviceid }'
-        rgbww_version: '{ .rgbww.version }'

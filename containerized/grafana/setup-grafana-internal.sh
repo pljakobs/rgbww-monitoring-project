@@ -40,9 +40,14 @@ else
     echo "⚠️  Datasource response: $DATASOURCE_RESPONSE"
 fi
 
+# Copy dashboards from temp location to proper location
+echo "📂 Setting up dashboard directory..."
+mkdir -p /var/lib/grafana/dashboards
+cp -r /opt/dashboards/* /var/lib/grafana/dashboards/ 2>/dev/null || true
+
 # Import all dashboards
 echo "📈 Importing dashboards..."
-for dashboard_file in /var/lib/grafana/dashboards/*.json; do
+for dashboard_file in /opt/dashboards/*.json; do
     if [ -f "$dashboard_file" ]; then
         dashboard_name=$(basename "$dashboard_file" .json)
         echo "   📋 Importing: $dashboard_name"

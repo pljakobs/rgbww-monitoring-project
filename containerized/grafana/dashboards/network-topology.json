@@ -81,7 +81,7 @@
               "showLegend": true,
               "style": {
                 "color": {
-                  "field": "device_connected",
+                  "field": "device_connection_status",
                   "fixed": "green"
                 },
                 "opacity": 0.4,
@@ -145,10 +145,20 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_connected",
+          "expr": "device_connection_status",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_ip_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "C"
         }
       ],
       "title": "IoT Device Network Map",
@@ -171,7 +181,7 @@
             "indexByName": {},
             "renameByName": {
               "Value #A": "device_info",
-              "Value #B": "device_connected"
+              "Value #B": "device_connection_status"
             }
           }
         }
@@ -230,7 +240,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count by (ip) (device_info)",
+          "expr": "count by (ip_address) (device_ip_info)",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
@@ -248,7 +258,7 @@
             "indexByName": {},
             "renameByName": {
               "Value": "Device Count",
-              "ip": "IP Address"
+              "ip_address": "IP Address"
             }
           }
         }
@@ -354,8 +364,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_connected",
-          "legendFormat": "{{device_name}} ({{ip}})",
+          "expr": "device_connection_status",
+          "legendFormat": "{{device_name}} ({{ip_address}})",
           "refId": "A"
         }
       ],
