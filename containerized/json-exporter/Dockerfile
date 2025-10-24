@@ -1,8 +1,9 @@
-FROM docker.io/library/alpine:3.18
+FROM docker.io/library/alpine:3.19
 
-# Install JSON Exporter
-RUN apk add --no-cache ca-certificates curl && \
-    curl -L https://github.com/prometheus-community/json_exporter/releases/download/v0.6.0/json_exporter-0.6.0.linux-amd64.tar.gz | \
+# Update package index and install JSON Exporter
+RUN apk update && \
+    apk add --no-cache ca-certificates curl && \
+    curl -L --retry 3 --retry-delay 5 https://github.com/prometheus-community/json_exporter/releases/download/v0.6.0/json_exporter-0.6.0.linux-amd64.tar.gz | \
     tar xz -C /tmp && \
     mv /tmp/json_exporter-0.6.0.linux-amd64/json_exporter /usr/local/bin/ && \
     rm -rf /tmp/json_exporter-0.6.0.linux-amd64 && \

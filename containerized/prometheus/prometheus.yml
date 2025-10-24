@@ -72,7 +72,7 @@ scrape_configs:
         target_label: instance
       # Point to the json_exporter
       - target_label: __address__
-        replacement: localhost:7979
+        replacement: rgbww-json-exporter:7979
       # Device metadata relabeling (auto-generated from device discovery)
       # Map IP addresses to device names and IDs
       - source_labels: [instance]

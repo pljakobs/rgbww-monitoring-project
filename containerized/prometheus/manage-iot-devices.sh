@@ -491,15 +491,6 @@ auto_discover() {
         echo "$(date): Using existing device $discovery_ip for discovery"
     else
         echo "$(date): No existing devices found, skipping auto-discovery"
-    scan)
-        if [ -z "$2" ]; then
-            echo "❌ Network range required for scan command"
-            echo "   Usage: $0 scan <network_range>"
-            echo "   Example: $0 scan 192.168.1.0/24"
-            exit 1
-        fi
-        scan_network "$2"
-        ;;
         echo "$(date): Use 'manage-iot-devices.sh discover <ip>' to initialize device list"
         exit 0
     fi
@@ -553,19 +544,8 @@ case "$1" in
         refresh_metadata
         ;;
     auto-discover)
-    scan)
-        if [ -z "$2" ]; then
-            echo "❌ Network range required for scan command"
-            echo "   Usage: $0 scan <network_range>"
-            echo "   Example: $0 scan 192.168.1.0/24"
-            exit 1
-        fi
-        scan_network "$2"
-        ;;
         auto_discover
         ;;
-    *)
-        echo "Usage: $0 {add|remove|list|test|update|discover|refresh|auto-discover|scan} [device_ip]"
     scan)
         if [ -z "$2" ]; then
             echo "❌ Network range required for scan command"
@@ -575,6 +555,10 @@ case "$1" in
         fi
         scan_network "$2"
         ;;
+    *)
+        echo "❌ Unknown command: $1"
+        echo ""
+        echo "📋 RGBWW IoT Device Management"
         echo ""
         echo "Commands:"
         echo "  add <ip>        - Add a new IoT device (queries /config for metadata)"
@@ -585,31 +569,12 @@ case "$1" in
         echo "  discover [ip]   - Auto-discover all devices using /hosts endpoint"
         echo "  refresh         - Refresh metadata for existing devices"
         echo "  auto-discover   - Automated discovery for systemd timer (silent mode)"
-  scan <range>    - Network scan for IoT devices (e.g., 192.168.1.0/24)
-    scan)
-        if [ -z "$2" ]; then
-            echo "❌ Network range required for scan command"
-            echo "   Usage: $0 scan <network_range>"
-            echo "   Example: $0 scan 192.168.1.0/24"
-            exit 1
-        fi
-        scan_network "$2"
-        ;;
+        echo "  scan <range>    - Network scan for IoT devices (e.g., 192.168.1.0/24)"
         echo ""
         echo "Examples:"
         echo "  $0 discover 192.168.29.101    # Discover all devices via one device"
         echo "  $0 discover                   # Use first existing device for discovery"
         echo "  $0 refresh                    # Update names for existing devices"
         echo "  $0 auto-discover              # Used by systemd timer"
-    scan)
-        if [ -z "$2" ]; then
-            echo "❌ Network range required for scan command"
-            echo "   Usage: $0 scan <network_range>"
-            echo "   Example: $0 scan 192.168.1.0/24"
-            exit 1
-        fi
-        scan_network "$2"
-        ;;
-        exit 1
         ;;
 esac

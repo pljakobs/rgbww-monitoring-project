@@ -66,7 +66,21 @@ That's it! The system will:
 
 ## 🎨 Pre-configured Dashboards
 
-### 1. RGBWW IoT Device Overview
+### 1. Controller Status Dashboard
+**Streamlined controller monitoring with essential metrics**
+
+- 📋 **Controller Status Table**: One line per controller showing:
+  - Controller name and device ID
+  - Online/offline status with color coding
+  - Current uptime in human-readable format
+  - Free heap memory with gauge visualization
+  - ROM version and SoC information
+- 📈 **Free Heap Time Series**: Real-time memory monitoring graph
+  - Individual line per controller
+  - Legend with current, min, and max values
+  - Color-coded by controller for easy identification
+
+### 2. RGBWW IoT Device Overview
 **Complete device inventory and status monitoring**
 
 - 📊 **Device Statistics**: Total devices, online ratio, average uptime
@@ -75,7 +89,7 @@ That's it! The system will:
 - 💾 **Memory Usage Graphs**: Real-time heap memory monitoring
 - ⏱️ **Uptime Tracking**: Device uptime over time
 
-### 2. RGBWW Network Topology  
+### 3. RGBWW Network Topology  
 **Network visualization and connectivity monitoring**
 
 - 🗺️ **Network Map**: Geographic view of device locations

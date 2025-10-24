@@ -39,4 +39,4 @@ echo "✅ Device discovery started"
 echo "🚀 Starting Prometheus..."
 
 # Start Prometheus with passed arguments
-exec /bin/prometheus "$@"
+exec /usr/local/bin/prometheus "$@"
