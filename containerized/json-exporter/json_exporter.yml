@@ -1,0 +1,77 @@
+---
+modules:
+  default:
+    metrics:
+    - name: device_info
+      type: object
+      help: Device information
+      path: '{}'
+      labels:
+        deviceid: '{ .deviceid }'
+        current_rom: '{ .current_rom }'
+        git_version: '{ .git_version }'
+        build_type: '{ .build_type }'
+        git_date: '{ .git_date }'
+        webapp_version: '{ .webapp_version }'
+        sming: '{ .sming }'
+        soc: '{ .soc }'
+        ssid: '{ .connection.ssid }'
+        current_ip: '{ .connection.ip }'
+        mac: '{ .connection.mac }'
+        gateway: '{ .connection.gateway }'
+        netmask: '{ .connection.netmask }'
+        rgbww_version: '{ .rgbww.version }'
+      values:
+        info: 1
+
+    - name: device_uptime_seconds
+      type: value  
+      help: Device uptime in seconds
+      path: '{ .uptime }'
+      labels:
+        deviceid: '{ .deviceid }'
+        current_rom: '{ .current_rom }'
+        git_version: '{ .git_version }'
+        soc: '{ .soc }'
+
+    - name: device_heap_free_bytes
+      type: value
+      help: Free heap memory in bytes  
+      path: '{ .heap_free }'
+      labels:
+        deviceid: '{ .deviceid }'
+        current_rom: '{ .current_rom }'
+        git_version: '{ .git_version }'
+        soc: '{ .soc }'
+
+    - name: device_event_clients
+      type: value
+      help: Number of event clients connected
+      path: '{ .event_num_clients }'
+      labels:
+        deviceid: '{ .deviceid }'
+
+    - name: device_connection_status
+      type: value
+      help: Device WiFi connection status (1=connected, 0=disconnected)
+      path: '{ .connection.connected }'
+      labels:
+        deviceid: '{ .deviceid }'
+        ssid: '{ .connection.ssid }'
+        current_ip: '{ .connection.ip }'
+        mac: '{ .connection.mac }'
+
+    - name: device_dhcp_enabled
+      type: value
+      help: Device DHCP configuration (1=enabled, 0=disabled)
+      path: '{ .connection.dhcp }'
+      labels:
+        deviceid: '{ .deviceid }'
+
+    - name: device_rgbww_queue_size
+      type: value
+      help: RGBWW queue size
+      path: '{ .rgbww.queuesize }'
+      labels:
+        deviceid: '{ .deviceid }'
+        rgbww_version: '{ .rgbww.version }'

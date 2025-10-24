@@ -1,0 +1,25 @@
+[Unit]
+Description=IoT Device Discovery Service
+Documentation=Auto-discover IoT devices and update Prometheus configuration
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+ExecStart=/etc/prometheus/manage-iot-devices.sh auto-discover
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=iot-discovery
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/etc/prometheus /var/log
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+
+[Install]
+WantedBy=multi-user.target

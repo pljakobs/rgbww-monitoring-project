@@ -1,0 +1,26 @@
+[Unit]
+Description=Prometheus JSON Exporter
+Documentation=https://github.com/prometheus-community/json_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/json_exporter --config.file=/etc/prometheus/json_exporter.yml --web.listen-address=:7979
+Restart=on-failure
+RestartSec=5
+SyslogIdentifier=json_exporter
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/prometheus
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

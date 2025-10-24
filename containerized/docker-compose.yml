@@ -1,0 +1,72 @@
+version: '3.8'
+
+# Environment variables can be set in .env file
+# Copy .env.example to .env and customize
+
+services:
+  prometheus:
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+    container_name: rgbww-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - PROMETHEUS_RETENTION_TIME=15d
+      - PROMETHEUS_RETENTION_SIZE=10GB
+      - INITIAL_CONTROLLER_IP=${INITIAL_CONTROLLER_IP:-}
+      - NETWORK_RANGE=${NETWORK_RANGE:-}
+    networks:
+      - rgbww_network
+    restart: unless-stopped
+    depends_on:
+      - json-exporter
+
+  json-exporter:
+    build:
+      context: ./json-exporter
+      dockerfile: Dockerfile
+    container_name: rgbww-json-exporter
+    ports:
+      - "7979:7979"
+    networks:
+      - rgbww_network
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana:10.2.0
+    container_name: rgbww-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=rgbww123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_INSTALL_PLUGINS=grafana-worldmap-panel,grafana-piechart-panel
+    networks:
+      - rgbww_network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  rgbww_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

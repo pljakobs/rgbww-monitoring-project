@@ -1,0 +1,17 @@
+[Unit]
+Description=IoT Device Discovery Timer
+Documentation=Runs IoT device discovery every 30 minutes
+Requires=iot-discovery.service
+
+[Timer]
+# Run every 30 minutes
+OnCalendar=*:00/30
+# Run 2 minutes after boot
+OnBootSec=2min
+# If the system was down during a scheduled run, run it as soon as possible
+Persistent=true
+# Add some randomization to prevent all systems from hitting devices at once
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

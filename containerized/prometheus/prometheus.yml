@@ -1,0 +1,180 @@
+# Sample config for Prometheus.
+
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+      monitor: 'example'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['localhost:9093']
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: node
+    # If prometheus-node-exporter is installed, grab stats about the local
+    # machine by default.
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # IoT Devices - JSON Exporter Configuration
+  - job_name: 'iot-devices'
+    scrape_interval: 30s
+    metrics_path: '/probe'
+    params:
+      module: [default]
+    static_configs:
+      - targets:
+        - 192.168.29.101
+        - 192.168.29.102
+        - 192.168.29.111
+        - 192.168.29.112
+        - 192.168.29.113
+        - 192.168.29.115
+        - 192.168.29.121
+        - 192.168.29.122
+        - 192.168.29.125
+        - 192.168.29.49
+        - 192.168.29.59
+    relabel_configs:
+      # The target is the device IP, construct the full URL
+      - source_labels: [__address__]
+        target_label: __param_target
+        replacement: 'http://${1}/info'
+      # Use device IP as initial instance (will be overridden by deviceid)
+      - source_labels: [__address__]
+        target_label: instance
+      # Point to the json_exporter
+      - target_label: __address__
+        replacement: localhost:7979
+      # Device metadata relabeling (auto-generated from device discovery)
+      # Map IP addresses to device names and IDs
+      - source_labels: [instance]
+        regex: 192.168.29.115
+        target_label: device_name
+        replacement: LED_So2
+      - source_labels: [instance]
+        regex: 192.168.29.113
+        target_label: device_name
+        replacement: Lightinator-15603867
+      - source_labels: [instance]
+        regex: 192.168.29.111
+        target_label: device_name
+        replacement: Lightinator-1451258
+      - source_labels: [instance]
+        regex: 192.168.29.112
+        target_label: device_name
+        replacement: Lightinator-390774
+      - source_labels: [instance]
+        regex: 192.168.29.49
+        target_label: device_name
+        replacement: Lightinator-10964518
+      - source_labels: [instance]
+        regex: 192.168.29.102
+        target_label: device_name
+        replacement: LED_Wo
+      - source_labels: [instance]
+        regex: 192.168.29.121
+        target_label: device_name
+        replacement: LED_Ku
+      - source_labels: [instance]
+        regex: 192.168.29.125
+        target_label: device_name
+        replacement: LED_Be
+      - source_labels: [instance]
+        regex: 192.168.29.59
+        target_label: device_name
+        replacement: Lightinator-10966439
+      - source_labels: [instance]
+        regex: 192.168.29.122
+        target_label: device_name
+        replacement: LED_Facelight
+      - source_labels: [instance]
+        regex: 192.168.29.101
+        target_label: device_name
+        replacement: LED_Bu
+
+      # Map IP addresses to device IDs (primary identifier)
+      - source_labels: [instance]
+        regex: 192.168.29.115
+        target_label: device_id
+        replacement: 12742997
+      - source_labels: [instance]
+        regex: 192.168.29.113
+        target_label: device_id
+        replacement: 15603867
+      - source_labels: [instance]
+        regex: 192.168.29.111
+        target_label: device_id
+        replacement: 1451258
+      - source_labels: [instance]
+        regex: 192.168.29.112
+        target_label: device_id
+        replacement: 390774
+      - source_labels: [instance]
+        regex: 192.168.29.49
+        target_label: device_id
+        replacement: 10964518
+      - source_labels: [instance]
+        regex: 192.168.29.102
+        target_label: device_id
+        replacement: 2826766
+      - source_labels: [instance]
+        regex: 192.168.29.121
+        target_label: device_id
+        replacement: 2827485
+      - source_labels: [instance]
+        regex: 192.168.29.125
+        target_label: device_id
+        replacement: 6737456
+      - source_labels: [instance]
+        regex: 192.168.29.59
+        target_label: device_id
+        replacement: 10966439
+      - source_labels: [instance]
+        regex: 192.168.29.122
+        target_label: device_id
+        replacement: 4599343
+      - source_labels: [instance]
+        regex: 192.168.29.101
+        target_label: device_id
+        replacement: 2827530
+
+    # After scraping, relabel to use deviceid as primary instance identifier
+    metric_relabel_configs:
+      # Replace instance label with deviceid for all metrics
+      - source_labels: [deviceid]
+        target_label: instance
+        regex: '(.+)'
+        replacement: '${1}'
+      # Keep original IP as a separate label
+      - source_labels: [__address__]
+        target_label: source_ip
+        regex: '(.+)'
+        replacement: '${1}'

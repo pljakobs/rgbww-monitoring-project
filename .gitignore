@@ -1,0 +1,42 @@
+# Build and runtime files
+*.log
+*.tmp
+/tmp/
+.env
+
+# Prometheus data
+prometheus_data/
+grafana_data/
+
+# Device-specific files (these contain local network info)
+native-install/config/iot-devices.txt
+native-install/config/iot-device-metadata.json
+
+# Container runtime
+.container-*
+docker-compose.override.yml
+
+# System files
+.DS_Store
+Thumbs.db
+*~
+.#*
+\#*#
+.*.swp
+.*.swo
+
+# IDE files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Local development
+local-*
+test-*
+dev-*

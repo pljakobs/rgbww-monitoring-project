@@ -1,0 +1,13 @@
+# Logrotate configuration for IoT device discovery
+/var/log/iot-discovery.log {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 644 root root
+    postrotate
+        systemctl reload-or-restart rsyslog > /dev/null 2>&1 || true
+    endscript
+}
