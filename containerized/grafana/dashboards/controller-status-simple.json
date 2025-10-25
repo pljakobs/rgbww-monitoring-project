@@ -10,80 +10,44 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "Offline"
-                },
-                "1": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "Online"
-                }
-              },
-              "type": "value"
-            }
-          ]
-        }
-      },
-      "gridPos": {
-        "h": 12,
-        "w": 24,
-        "x": 0,
-        "y": 0
-      },
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "Offline"}, "1": {"color": "green", "index": 0, "text": "Online"}}, "type": "value"}]}}},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
       "id": 1,
-      "options": {
-        "showHeader": true
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "device_connection_status",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
+      "options": {"showHeader": true},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_connection_status", "format": "table", "refId": "A"}],
       "title": "Controller Status",
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "Time": true,
-              "__name__": true,
-              "instance": true,
-              "job": true
-            },
-            "renameByName": {
-              "Value": "Status",
-              "device_name": "Controller Name",
-              "deviceid": "Device ID", 
-              "device_ip": "IP Address"
-            }
-          }
-        }
-      ],
-      "type": "table"
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Status", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
+      "id": 2,
+      "options": {"showHeader": true},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_heap_free_bytes", "format": "table", "refId": "B"}],
+      "title": "Heap Free Bytes",
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Heap Free", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
+      "id": 3,
+      "options": {"showHeader": true},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_uptime_seconds", "format": "table", "refId": "C"}],
+      "title": "Uptime (Seconds)",
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Uptime", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
+      "id": 4,
+      "options": {"showHeader": true},
+      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_rgbww_queue_size", "format": "table", "refId": "D"}],
+      "title": "RGBWW Queue Size",
+      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Queue Size", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
     }
   ],
   "refresh": "30s",

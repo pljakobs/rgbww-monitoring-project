@@ -54,6 +54,14 @@ modules:
         deviceid: '{ .deviceid }'
         ip_address: '{ .connection.ip }'
 
+    # Device name as info metric (from /config endpoint)
+    - name: device_name_info
+      type: value
+      help: Device name information
+      path: '{ .general.device_name }'
+      labels:
+        deviceid: '{ .deviceid }'
+
     # Device uptime in seconds
     - name: device_uptime_seconds
       type: value  

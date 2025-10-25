@@ -484,18 +484,20 @@ refresh_metadata() {
         echo "Fetching metadata for $device_ip..."
         
         # Fetch device metadata from both config and info endpoints
-        local config_data=""
-        local info_data=""
-        local device_name="unknown"
-        local deviceid="unknown"
+    local config_data=""
+    local info_data=""
+    local device_name="unknown"
+    local deviceid="unknown"
+    local device_ip_actual="unknown"
         
         if command -v curl >/dev/null 2>&1; then
-            # Get config data for device name
+            # Get config data for device name and IP
             config_data=$(curl -s --connect-timeout 5 "http://$device_ip/config" 2>/dev/null)
             if [ $? -eq 0 ] && [ -n "$config_data" ] && command -v jq >/dev/null 2>&1; then
                 device_name=$(echo "$config_data" | jq -r '.general.device_name // .network.mdns.name // .device_name // .name // .hostname // "unknown"' 2>/dev/null)
+                device_ip_actual=$(echo "$config_data" | jq -r '.network.connection.ip // .connection.ip // "unknown"' 2>/dev/null)
             fi
-            
+
             # Get info data for device ID
             info_data=$(curl -s --connect-timeout 5 "http://$device_ip/info" 2>/dev/null)
             if [ $? -eq 0 ] && [ -n "$info_data" ] && command -v jq >/dev/null 2>&1; then
@@ -506,17 +508,24 @@ refresh_metadata() {
         # Update metadata
         if command -v jq >/dev/null 2>&1; then
             local temp_meta=$(mktemp)
-            jq --arg ip "$device_ip" --arg name "$device_name" --arg id "$deviceid" \
-               '.[$ip] = {device_name: $name, deviceid: $id, refreshed_date: now | strftime("%Y-%m-%d %H:%M:%S")}' \
+            jq --arg ip "$device_ip" --arg name "$device_name" --arg id "$deviceid" --arg ip_actual "$device_ip_actual" \
+               '.[$ip] = {device_name: $name, deviceid: $id, ip_address: $ip_actual, refreshed_date: now | strftime("%Y-%m-%d %H:%M:%S")}' \
                "$DEVICE_METADATA" > "$temp_meta" && mv "$temp_meta" "$DEVICE_METADATA"
-            
+
             updated_count=$((updated_count + 1))
-            echo "  Updated: $device_ip -> $device_name (ID: $deviceid)"
+            echo "  Updated: $device_ip -> $device_name (ID: $deviceid, IP: $device_ip_actual)"
         fi
         
     done < "$DEVICES_FILE"
     
     echo "Refreshed metadata for $updated_count devices"
+
+    # Write device_name_info metrics to persistent Prometheus textfile collector directory
+    local textfile="/etc/prometheus/textfile_collector/device_name_info.prom"
+    : > "$textfile"
+    if command -v jq >/dev/null 2>&1; then
+        jq -r 'to_entries[] | select(.value.deviceid != "unknown" and .value.device_name != "unknown") | "device_name_info{deviceid=\"" + .value.deviceid + "\",device_name=\"" + .value.device_name + "\",ip=\"" + .key + "\"} 1"' "$DEVICE_METADATA" >> "$textfile"
+    fi
 }
 
 # Function for automated discovery (used by background timer)

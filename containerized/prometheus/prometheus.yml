@@ -38,10 +38,9 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   - job_name: node
-    # If prometheus-node-exporter is installed, grab stats about the local
-    # machine by default.
+    # Scrape node_exporter in the container network
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['rgbww-node-exporter:9110']
 
   # IoT Devices - JSON Exporter Configuration
   - job_name: 'iot-devices'
@@ -127,3 +126,4 @@ scrape_configs:
         target_label: device_name
         regex: '15603867'
         replacement: 'Lightinator_15603867'
+

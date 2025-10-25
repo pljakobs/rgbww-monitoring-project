@@ -20,9 +20,10 @@ RUN curl -L https://github.com/prometheus/prometheus/releases/download/v2.48.0/p
     mv /tmp/prometheus-2.48.0.linux-amd64/console_libraries /etc/prometheus/ && \
     rm -rf /tmp/prometheus-2.48.0.linux-amd64
 
+
 # Create prometheus user and directories
 RUN addgroup -S prometheus && adduser -S -G prometheus prometheus && \
-    mkdir -p /prometheus /etc/prometheus/data && \
+    mkdir -p /prometheus /etc/prometheus/data /etc/prometheus/textfile_collector && \
     chown -R prometheus:prometheus /prometheus /etc/prometheus
 
 # Copy configuration files

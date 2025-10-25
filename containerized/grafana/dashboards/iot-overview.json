@@ -1,5 +1,4 @@
 {
-  "annotations": {
     "list": [
       {
         "builtIn": 1,
@@ -10,77 +9,12 @@
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
-  "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
-  "id": null,
-  "links": [],
-  "liveNow": false,
-  "panels": [
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "hideFrom": {
-              "tooltip": false,
-              "vis": false,
-              "legend": false
-            }
-          },
-          "mappings": []
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 6,
-        "x": 0,
-        "y": 0
-      },
-      "id": 1,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "values": ["value"]
-        },
-        "pieType": "pie",
-        "reduceOptions": {
-          "values": false,
-          "calcs": ["lastNotNull"],
-          "fields": ""
-        },
-        "tooltip": {
-          "mode": "single"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "count by (current_rom) (device_rom_info)",
-          "legendFormat": "{{current_rom}}",
-          "refId": "A"
-        }
-      ],
+        "name": "Annotations & Alerts"
+  ],
       "title": "Devices by ROM Version",
       "type": "piechart"
-    },
-    {
+  },
+  {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -102,7 +36,7 @@
                 "color": "green",
                 "value": 1
               }
-            ]
+            ],
           },
           "unit": "short"
         },
@@ -141,8 +75,8 @@
       ],
       "title": "Total Devices",
       "type": "stat"
-    },
-    {
+  },
+  {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -207,8 +141,8 @@
       ],
       "title": "Devices Online",
       "type": "stat"
-    },
-    {
+  },
+  {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -273,8 +207,8 @@
       ],
       "title": "Average Uptime",
       "type": "stat"
-    },
-    {
+  },
+  {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -304,7 +238,7 @@
                 }
               },
               "type": "value"
-            }
+                        }
           ],
           "thresholds": {
             "mode": "absolute",
@@ -384,64 +318,53 @@
       "pluginVersion": "10.2.0",
       "targets": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_connection_status",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_uptime_seconds",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "B"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_heap_free_bytes",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "C"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_rom_info",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "D"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_git_version_info",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "E"
         },
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
           "expr": "device_soc_info",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "F"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "expr": "device_name_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "G"
         }
       ],
       "title": "Device Inventory",
@@ -505,8 +428,8 @@
         }
       ],
       "type": "table"
-    },
-    {
+  },
+  {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -689,7 +612,7 @@
       ],
       "title": "Device Uptime",
       "type": "timeseries"
-    }
+  }
   ],
   "refresh": "30s",
   "schemaVersion": 38,
