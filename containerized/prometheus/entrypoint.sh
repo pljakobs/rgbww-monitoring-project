@@ -30,12 +30,20 @@ fi
 (
     while true; do
         sleep 1800  # 30 minutes
-        echo "🔄 Running scheduled device discovery..."
-        /etc/prometheus/manage-iot-devices.sh auto
+        echo "🔄 $(date): Running scheduled device discovery..."
+        if /etc/prometheus/manage-iot-devices.sh auto-discover; then
+            echo "✅ $(date): Auto-discovery completed successfully"
+        else
+            echo "⚠️  $(date): Auto-discovery encountered issues"
+        fi
     done
 ) &
 
-echo "✅ Device discovery started"
+# Store the background process PID for potential cleanup
+AUTO_DISCOVERY_PID=$!
+
+echo "✅ Device discovery started (Background PID: $AUTO_DISCOVERY_PID)"
+echo "🔄 Auto-discovery will run every 30 minutes to find new devices and name changes"
 echo "🚀 Starting Prometheus..."
 
 # Start Prometheus with passed arguments

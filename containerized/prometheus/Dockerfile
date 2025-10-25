@@ -27,6 +27,7 @@ RUN addgroup -S prometheus && adduser -S -G prometheus prometheus && \
 
 # Copy configuration files
 COPY prometheus.yml /etc/prometheus/prometheus.yml
+COPY prometheus.yml.template /etc/prometheus/prometheus.yml.template
 COPY manage-iot-devices.sh /etc/prometheus/manage-iot-devices.sh
 COPY entrypoint.sh /entrypoint.sh
 

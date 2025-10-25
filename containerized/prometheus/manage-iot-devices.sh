@@ -196,8 +196,8 @@ update_prometheus_config() {
     if promtool check config "$PROMETHEUS_CONFIG" > /dev/null 2>&1; then
         echo "Prometheus configuration updated successfully"
         echo "Configuration has $(wc -l < "$DEVICES_FILE") IoT devices"
-        echo "Restart Prometheus service to apply changes:"
-        echo "sudo systemctl restart prometheus"
+        echo "Reload Prometheus to apply changes:"
+        echo "curl -X POST http://localhost:9090/-/reload"
     else
         echo "ERROR: Configuration validation failed!"
         echo "Please check the configuration manually"
@@ -266,8 +266,21 @@ scan_network() {
         return 1
     else
         echo "🎉 Found $found_devices IoT devices in network scan"
-        # Now run normal discovery to find network topology
-        discover_devices
+        # Try topology discovery to find network relationships
+        if discover_devices; then
+            echo "Topology discovery successful"
+        else
+            echo "Topology discovery failed, but keeping all scanned devices"
+            # Since topology discovery failed, just refresh metadata for all scanned devices
+            if [ -f "$DEVICES_FILE" ]; then
+                while IFS= read -r device_ip; do
+                    [ -z "$device_ip" ] && continue
+                    echo "Refreshing metadata for $device_ip..."
+                    add_device "$device_ip" >/dev/null 2>&1
+                done < "$DEVICES_FILE"
+                update_prometheus_config
+            fi
+        fi
     fi
 }
 
@@ -275,15 +288,29 @@ scan_network() {
 discover_devices() {
     local discovery_ip="$1"
     
-    # If no IP provided, try to use any existing device
+    # If no IP provided, try to find a suitable seed device from existing devices
     if [ -z "$discovery_ip" ] && [ -f "$DEVICES_FILE" ]; then
-        discovery_ip=$(head -n1 "$DEVICES_FILE")
+        # Try each device in the list until we find one with /hosts data
+        while IFS= read -r candidate_ip; do
+            [ -z "$candidate_ip" ] && continue
+            echo "Testing $candidate_ip for topology discovery capability..."
+            local hosts_test=$(curl -s --connect-timeout 3 "http://$candidate_ip/hosts" 2>/dev/null)
+            if [ -n "$hosts_test" ] && echo "$hosts_test" | jq -e '.hosts[]?' >/dev/null 2>&1; then
+                discovery_ip="$candidate_ip"
+                echo "Found suitable seed device: $discovery_ip"
+                break
+            else
+                echo "Device $candidate_ip does not provide topology data, trying next..."
+            fi
+        done < "$DEVICES_FILE"
     fi
     
     if [ -z "$discovery_ip" ]; then
         echo "Usage: $0 discover [device_ip]"
         echo "Please provide an IP address of any device in the network, or add at least one device first"
-        exit 1
+        echo "Note: If topology discovery fails, all scanned devices will be kept anyway"
+        # Don't exit here - we might still have devices from network scan
+        return 1
     fi
     
     echo "Starting comprehensive network topology discovery from $discovery_ip..."
@@ -348,13 +375,25 @@ discover_devices() {
             local deviceid="unknown"
             local device_name="unknown"
             
-            if [ -n "$info_data" ]; then
-                deviceid=$(echo "$info_data" | jq -r '.deviceid // "unknown"' 2>/dev/null)
-            fi
-            
-            if [ -n "$config_data" ]; then
-                device_name=$(echo "$config_data" | jq -r '.general.device_name // .network.mdns.name // .device_name // .name // .hostname // "unknown"' 2>/dev/null)
-            fi
+                # Try to extract deviceid from /info first
+                if [ -n "$info_data" ]; then
+                    deviceid=$(echo "$info_data" | jq -r '.deviceid // "unknown"' 2>/dev/null)
+                fi
+
+                # Try to extract device_name from /config first
+                if [ -n "$config_data" ]; then
+                    device_name=$(echo "$config_data" | jq -r '.general.device_name // .network.mdns.name // .device_name // .name // .hostname // "unknown"' 2>/dev/null)
+                fi
+
+                # If still unknown, try /info for device_name
+                if [ "$device_name" = "unknown" ] && [ -n "$info_data" ]; then
+                    device_name=$(echo "$info_data" | jq -r '.device_name // .name // .hostname // "unknown"' 2>/dev/null)
+                fi
+
+                # If still unknown, log a warning
+                if [ "$device_name" = "unknown" ]; then
+                    echo "      WARNING: Could not determine device name for $current_ip"
+                fi
             
             # Update metadata
             jq --arg ip "$current_ip" --arg name "$device_name" --arg id "$deviceid" --arg round "$round" \
@@ -480,7 +519,7 @@ refresh_metadata() {
     echo "Refreshed metadata for $updated_count devices"
 }
 
-# Function for automated discovery (used by systemd timer)
+# Function for automated discovery (used by background timer)
 auto_discover() {
     echo "$(date): Starting automated IoT device discovery..."
     
@@ -492,7 +531,7 @@ auto_discover() {
     else
         echo "$(date): No existing devices found, skipping auto-discovery"
         echo "$(date): Use 'manage-iot-devices.sh discover <ip>' to initialize device list"
-        exit 0
+        return 0
     fi
     
     # Count current devices
@@ -511,12 +550,27 @@ auto_discover() {
     
     if [ "$new_count" -ne "$current_count" ]; then
         echo "$(date): Device count changed from $current_count to $new_count"
-        echo "$(date): Restarting Prometheus to apply changes..."
-        systemctl restart prometheus
+        echo "$(date): Reloading Prometheus configuration..."
+        
+        # In containerized environment, use Prometheus reload API instead of systemctl
+        if command -v curl >/dev/null 2>&1; then
+            if curl -X POST http://localhost:9090/-/reload 2>/dev/null; then
+                echo "$(date): Prometheus configuration reloaded successfully"
+            else
+                echo "$(date): Warning: Could not reload Prometheus configuration via API"
+                echo "$(date): Configuration changes will take effect on next restart"
+            fi
+        else
+            echo "$(date): Warning: curl not available, cannot reload Prometheus"
+            echo "$(date): Configuration changes will take effect on next restart"
+        fi
+        
         echo "$(date): Auto-discovery completed with changes"
     else
         echo "$(date): No new devices discovered, device count remains $new_count"
-        echo "$(date): Auto-discovery completed with no changes"
+        # Still refresh metadata in case device names changed
+        refresh_metadata
+        echo "$(date): Auto-discovery completed, metadata refreshed"
     fi
 }
 

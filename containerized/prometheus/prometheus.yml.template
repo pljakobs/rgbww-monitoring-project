@@ -1,0 +1,75 @@
+# Sample config for Prometheus.
+
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+      monitor: 'example'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['localhost:9093']
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: node
+    # If prometheus-node-exporter is installed, grab stats about the local
+    # machine by default.
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # IoT Devices - JSON Exporter Configuration
+  - job_name: 'iot-devices'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: '/probe'
+    params:
+      module: [default]
+    static_configs:
+      - targets:
+##IOT_DEVICES##
+    relabel_configs:
+      # The target is the device IP, construct the full URL
+      - source_labels: [__address__]
+        target_label: __param_target
+        replacement: 'http://${1}/info'
+      # Keep device IP as a label for reference
+      - source_labels: [__address__]
+        target_label: device_ip
+      # Point to the json_exporter
+      - target_label: __address__
+        replacement: rgbww-json-exporter:7979
+
+    # After scraping, relabel to use deviceid as primary instance identifier
+    metric_relabel_configs:
+      # Replace instance label with deviceid for all metrics
+      - source_labels: [deviceid]
+        target_label: instance
+        regex: '(.+)'
+        replacement: '${1}'
+##DEVICE_RELABELS##
