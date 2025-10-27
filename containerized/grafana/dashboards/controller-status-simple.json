@@ -10,45 +10,203 @@
   "liveNow": false,
   "panels": [
     {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}, "mappings": [{"options": {"0": {"color": "red", "index": 1, "text": "Offline"}, "1": {"color": "green", "index": 0, "text": "Online"}}, "type": "value"}]}}},
-      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0},
-      "id": 1,
-      "options": {"showHeader": true},
-      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_connection_status", "format": "table", "refId": "A"}],
-      "title": "Controller Status",
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Status", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 12},
-      "id": 2,
-      "options": {"showHeader": true},
-      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_heap_free_bytes", "format": "table", "refId": "B"}],
-      "title": "Heap Free Bytes",
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Heap Free", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 20},
-      "id": 3,
-      "options": {"showHeader": true},
-      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_uptime_seconds", "format": "table", "refId": "C"}],
-      "title": "Uptime (Seconds)",
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Uptime", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
-    },
-    {
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}},
-      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 28},
-      "id": 4,
-      "options": {"showHeader": true},
-      "targets": [{"datasource": {"type": "prometheus", "uid": "prometheus"}, "expr": "device_rgbww_queue_size", "format": "table", "refId": "D"}],
-      "title": "RGBWW Queue Size",
-      "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}, "renameByName": {"Value": "Queue Size", "device_name": "Controller Name", "deviceid": "Device ID", "device_ip": "IP Address"}}}]
-    }
+      "datasource": {
+        "uid": "prometheus",
+        "type": "prometheus"
+      },
+      "description": "Device inventory with bridge metrics",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Reboot Reason"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Uptime"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dtdurations"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Heap Free"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "bytes"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 6
+      },
+      "id": 5,
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false,
+          "reducer": [
+            "sum"
+          ],
+          "countRows": false,
+          "fields": ""
+        },
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Device ID"
+          }
+        ]
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_heap_free_bytes",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_uptime_seconds",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_firmware_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_soc_info",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_reboot_reason",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_mdns_received",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "device_mdns_replies",
+          "format": "table",
+          "legendFormat": "__auto",
+          "refId": "G"
+        }
+      ],
+      "title": "Device Inventory",
+      "transformations": [
+        {
+          "id": "seriesToColumns",
+          "options": {
+            "byField": "deviceid"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "instance": true,
+              "job": true
+            },
+            "indexByName": {
+              "Value #A": 0,
+              "Value #B": 1,
+              "Value #C": 2,
+              "Value #D": 3,
+              "Value #E": 4,
+              "Value #F": 5,
+              "Value #G": 6,
+              "deviceid": 7
+            },
+            "renameByName": {
+              "Value #A": "Heap Free",
+              "Value #B": "Uptime",
+              "Value #C": "Firmware",
+              "Value #D": "SoC",
+              "Value #E": "Reboot Reason",
+              "Value #F": "mDNS Received",
+              "Value #G": "mDNS Replies",
+              "deviceid": "Device ID"
+            }
+          }
+        }
+      ],
+      "type": "table"
+  }
   ],
   "refresh": "30s",
   "schemaVersion": 38,

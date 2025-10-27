@@ -4,16 +4,40 @@ version: '3.8'
 # Copy .env.example to .env and customize
 
 services:
-  node-exporter:
-    image: docker.io/prom/node-exporter:latest
-    container_name: rgbww-node-exporter
+  influxdb_importer:
+    build:
+      context: .
+      dockerfile: Dockerfile.influxdb_importer
+    container_name: rgbww-influxdb-importer
+    networks:
+      - rgbww_network
+    restart: unless-stopped
+    depends_on:
+      - influxdb
+  mqtt_json_bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile.mqtt_json_bridge
+    container_name: rgbww-mqtt-json-bridge
     ports:
-      - "9110:9110"
+      - "8001:8001"
+    networks:
+      - rgbww_network
+    restart: unless-stopped
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: rgbww-influxdb
+    ports:
+      - "8086:8086"
     volumes:
-      - prometheus_data:/etc/prometheus/textfile_collector
-    command:
-      - '--web.listen-address=:9110'
-      - '--collector.textfile.directory=/etc/prometheus/textfile_collector'
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      - INFLUXDB_DB=rgbww
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=rgbww123
+      - INFLUXDB_BUCKET=rgbww
+      - INFLUXDB_ORG=default
     networks:
       - rgbww_network
     restart: unless-stopped
@@ -50,6 +74,10 @@ services:
     networks:
       - rgbww_network
     restart: unless-stopped
+    depends_on:
+      - mqtt_json_bridge
+    volumes:
+      - ./json-exporter/json_exporter.yml:/etc/json_exporter.yml:ro
 
   grafana:
     build:
@@ -74,6 +102,8 @@ services:
       - prometheus
 
 volumes:
+  influxdb_data:
+    driver: local
   prometheus_data:
     driver: local
   grafana_data:

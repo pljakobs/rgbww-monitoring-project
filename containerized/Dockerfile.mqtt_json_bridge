@@ -1,0 +1,5 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY mqtt_json_bridge.py .
+RUN pip install flask paho-mqtt
+CMD ["python", "mqtt_json_bridge.py"]

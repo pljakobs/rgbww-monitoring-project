@@ -1,111 +1,20 @@
 ---
 modules:
-  default:
+  mqtt_bridge:
+    url: 'http://rgbww-mqtt-json-bridge:8001/metrics.json'
     metrics:
-    # Device basic info - always 1 when device is responding
-    - name: device_info
-      type: value
-      help: Device online status
-      path: '1'
-      labels:
-        deviceid: '{ .deviceid }'
+      - name: rgbww_heap_free_bytes
+        type: value
+        help: Free heap memory in bytes (from MQTT bridge)
+        path: '$.devices[*]'
+        value: '{.freeHeap}'
+        labels:
+          deviceid: '{.id}'
 
-    # Device ID as a numeric value
-    - name: device_id_value
-      type: value
-      help: Device ID as a numeric value
-      path: '{ .deviceid }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # Git version as info metric
-    - name: device_git_version_info
-      type: value
-      help: Git version information
-      path: '1'
-      labels:
-        deviceid: '{ .deviceid }'
-        git_version: '{ .git_version }'
-
-    # Current ROM information
-    - name: device_rom_info
-      type: value
-      help: Current ROM information
-      path: '1'
-      labels:
-        deviceid: '{ .deviceid }'
-        current_rom: '{ .current_rom }'
-
-    # SoC type as info metric  
-    - name: device_soc_info
-      type: value
-      help: System on Chip information
-      path: '1'
-      labels:
-        deviceid: '{ .deviceid }'
-        soc: '{ .soc }'
-
-    # Device IP address as info metric
-    - name: device_ip_info
-      type: value
-      help: Device IP address information
-      path: '1'
-      labels:
-        deviceid: '{ .deviceid }'
-        ip_address: '{ .connection.ip }'
-
-    # Device name as info metric (from /config endpoint)
-    - name: device_name_info
-      type: value
-      help: Device name information
-      path: '{ .general.device_name }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # Device uptime in seconds
-    - name: device_uptime_seconds
-      type: value  
-      help: Device uptime in seconds
-      path: '{ .uptime }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # Free heap memory in bytes
-    - name: device_heap_free_bytes
-      type: value
-      help: Free heap memory in bytes  
-      path: '{ .heap_free }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # Number of event clients
-    - name: device_event_clients
-      type: value
-      help: Number of event clients connected
-      path: '{ .event_num_clients }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # WiFi connection status
-    - name: device_connection_status
-      type: value
-      help: Device WiFi connection status (1=connected, 0=disconnected)
-      path: '{ .connection.connected }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # DHCP configuration
-    - name: device_dhcp_enabled
-      type: value
-      help: Device DHCP configuration (1=enabled, 0=disabled)
-      path: '{ .connection.dhcp }'
-      labels:
-        deviceid: '{ .deviceid }'
-
-    # RGBWW queue size
-    - name: device_rgbww_queue_size
-      type: value
-      help: RGBWW queue size
-      path: '{ .rgbww.queuesize }'
-      labels:
-        deviceid: '{ .deviceid }'
+      - name: rgbww_uptime_seconds
+        type: value
+        help: Device uptime in seconds (from MQTT bridge)
+        path: '$.devices[*]'
+        value: '{.uptime}'
+        labels:
+          deviceid: '{.id}'

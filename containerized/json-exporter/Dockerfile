@@ -23,4 +23,4 @@ USER json_exporter
 EXPOSE 7979
 
 ENTRYPOINT ["/usr/local/bin/json_exporter"]
-CMD ["--config.file=/etc/json_exporter.yml", "--web.listen-address=:7979"]
+CMD ["--config.file=/etc/json_exporter.yml", "--web.listen-address=:7979", "--log.level=debug"]

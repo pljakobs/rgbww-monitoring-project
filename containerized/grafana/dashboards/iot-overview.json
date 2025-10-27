@@ -68,7 +68,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(device_info)",
+          "expr": "count(device_info{job=\"iot-mqtt-bridge\"})",
           "legendFormat": "Total Devices",
           "refId": "A"
         }
@@ -134,7 +134,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(device_connection_status) / count(device_info)",
+          "expr": "sum(device_connection_status{job=\"iot-mqtt-bridge\"}) / count(device_info{job=\"iot-mqtt-bridge\"})",
           "legendFormat": "Online Ratio",
           "refId": "A"
         }
@@ -200,7 +200,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "avg(device_uptime_seconds)",
+          "expr": "avg(device_uptime_seconds{job=\"iot-mqtt-bridge\"})",
           "legendFormat": "Avg Uptime",
           "refId": "A"
         }
@@ -319,49 +319,49 @@
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_connection_status",
+          "expr": "device_connection_status{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "A"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_uptime_seconds",
+          "expr": "device_uptime_seconds{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "B"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_heap_free_bytes",
+          "expr": "device_heap_free_bytes{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "C"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_rom_info",
+          "expr": "device_rom_info{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "D"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_git_version_info",
+          "expr": "device_git_version_info{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "E"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_soc_info",
+          "expr": "device_soc_info{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "F"
         },
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "expr": "device_name_info",
+          "expr": "device_name_info{job=\"iot-mqtt-bridge\"}",
           "format": "table",
           "legendFormat": "__auto",
           "refId": "G"
@@ -513,7 +513,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_heap_free_bytes",
+          "expr": "device_heap_free_bytes{job=\"iot-mqtt-bridge\"}",
           "legendFormat": "{{device_name}} ({{deviceid}})",
           "refId": "A"
         }
@@ -605,7 +605,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "device_uptime_seconds",
+          "expr": "device_uptime_seconds{job=\"iot-mqtt-bridge\"}",
           "legendFormat": "{{device_name}} ({{deviceid}})",
           "refId": "A"
         }

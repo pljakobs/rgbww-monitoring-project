@@ -42,88 +42,16 @@ scrape_configs:
     static_configs:
       - targets: ['rgbww-node-exporter:9110']
 
-  # IoT Devices - JSON Exporter Configuration
-  - job_name: 'iot-devices'
+
+  # IoT Devices - MQTT Bridge via JSON Exporter
+
+  - job_name: 'iot-mqtt-bridge'
     scrape_interval: 15s
     scrape_timeout: 10s
     metrics_path: '/probe'
     params:
-      module: [default]
+      module: [mqtt_bridge]
     static_configs:
       - targets:
-        - 192.168.29.101
-        - 192.168.29.102
-        - 192.168.29.111
-        - 192.168.29.112
-        - 192.168.29.113
-        - 192.168.29.115
-        - 192.168.29.121
-        - 192.168.29.122
-        - 192.168.29.125
-        - 192.168.29.49
-        - 192.168.29.59
-    relabel_configs:
-      # The target is the device IP, construct the full URL
-      - source_labels: [__address__]
-        target_label: __param_target
-        replacement: 'http://${1}/info'
-      # Keep device IP as a label for reference
-      - source_labels: [__address__]
-        target_label: device_ip
-      # Point to the json_exporter
-      - target_label: __address__
-        replacement: rgbww-json-exporter:7979
-
-    # After scraping, relabel to use deviceid as primary instance identifier
-    metric_relabel_configs:
-      # Replace instance label with deviceid for all metrics
-      - source_labels: [deviceid]
-        target_label: instance
-        regex: '(.+)'
-        replacement: '${1}'
-      # Add device names based on deviceid
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '2827530'
-        replacement: 'LED_Bu'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '2826766'
-        replacement: 'LED_Wo'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '1451258'
-        replacement: 'Lightinator_1451258'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '390774'
-        replacement: 'Lightinator_390774'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '10964518'
-        replacement: 'Lightinator_10964518'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '2827485'
-        replacement: 'LED_Ku'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '6737456'
-        replacement: 'LED_Be'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '10966439'
-        replacement: 'Lightinator_10966439'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '4599343'
-        replacement: 'LED_Facelight'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '12742997'
-        replacement: 'LED_So2'
-      - source_labels: [deviceid]
-        target_label: device_name
-        regex: '15603867'
-        replacement: 'Lightinator_15603867'
+        - rgbww-json-exporter:7979
 
