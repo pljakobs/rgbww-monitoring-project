@@ -18,33 +18,38 @@ print_header() {
     echo "║           RGBWW IoT Monitoring Stack                ║"
     echo "║                                                      ║"
     echo "║  🔍 Automatic Device Discovery                       ║"
-    echo "║  📊 Prometheus + Grafana + JSON Exporter            ║"
+    echo "║  📊 InfluxDB + Grafana + MQTT Importer              ║"
     echo "║  📈 Pre-configured Dashboards                       ║"
     echo "╚══════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo ""
 }
 
-check_docker() {
-    if ! command -v docker &> /dev/null; then
-        echo -e "${RED}❌ Docker is not installed or not in PATH${NC}"
-        echo "Please install Docker first: https://docs.docker.com/get-docker/"
+check_container_runtime() {
+    if command -v podman &> /dev/null; then
+        CONTAINER_CMD="podman"
+        if command -v podman-compose &> /dev/null; then
+            COMPOSE_CMD="podman-compose"
+        else
+            echo -e "${RED}❌ podman-compose is not installed${NC}"
+            echo "Please install podman-compose: https://github.com/containers/podman-compose"
+            exit 1
+        fi
+        echo -e "${GREEN}✅ Podman environment ready${NC}"
+    elif command -v docker &> /dev/null; then
+        CONTAINER_CMD="docker"
+        if command -v docker-compose &> /dev/null; then
+            COMPOSE_CMD="docker-compose"
+        else
+            echo -e "${RED}❌ Docker Compose is not installed${NC}"
+            echo "Please install Docker Compose first"
+            exit 1
+        fi
+        echo -e "${GREEN}✅ Docker environment ready${NC}"
+    else
+        echo -e "${RED}❌ No container runtime found (podman or docker)${NC}"
         exit 1
     fi
-    
-    if ! command -v docker-compose &> /dev/null; then
-        echo -e "${RED}❌ Docker Compose is not installed${NC}"
-        echo "Please install Docker Compose first"
-        exit 1
-    fi
-    
-    if ! docker info &> /dev/null; then
-        echo -e "${RED}❌ Docker daemon is not running${NC}"
-        echo "Please start Docker daemon first"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}✅ Docker environment ready${NC}"
 }
 
 check_initial_controller() {
@@ -150,13 +155,11 @@ show_access_info() {
     echo -e "      User: ${GREEN}admin${NC}"
     echo -e "      Pass: ${GREEN}rgbww123${NC}"
     echo ""
-    
-    echo -e "   ${YELLOW}📈 Prometheus:${NC}"
-    echo -e "      URL: ${GREEN}http://localhost:9090${NC}"
+    echo -e "   ${YELLOW}� InfluxDB:${NC}"
+    echo -e "      URL: ${GREEN}http://localhost:8086${NC}"
     echo ""
-    
-    echo -e "   ${YELLOW}🔧 JSON Exporter:${NC}"
-    echo -e "      URL: ${GREEN}http://localhost:7979${NC}"
+    echo -e "   ${YELLOW}� MQTT to InfluxDB Importer:${NC}"
+    echo -e "      Container: ${GREEN}rgbww-influxdb-importer${NC}"
     echo ""
     
     echo -e "${BLUE}📋 Pre-configured Dashboards:${NC}"
@@ -180,9 +183,60 @@ show_access_info() {
 case "$1" in
     "start"|"")
         print_header
-        check_docker
+        check_container_runtime
         check_initial_controller
-        start_stack
+        # Source InfluxDB tokens if available
+        if [ -f influxdb-tokens.env ]; then
+            echo -e "${BLUE}🔑 Sourcing InfluxDB tokens from influxdb-tokens.env...${NC}"
+            source influxdb-tokens.env
+            export INFLUXDB_TOKEN_MQTT
+            export INFLUXDB_TOKEN_GRAFANA
+        else
+            echo -e "${YELLOW}⚠️  influxdb-tokens.env not found. Tokens will not be injected.${NC}"
+        fi
+        # Start stack first
+        echo -e "${BLUE}🚀 Starting RGBWW IoT Monitoring Stack...${NC}"
+        echo ""
+        $COMPOSE_CMD build
+        echo ""
+        $COMPOSE_CMD up -d
+        echo ""
+        echo -e "${GREEN}✅ Stack started successfully!${NC}"
+
+        # Wait for InfluxDB to be ready
+        echo -n "   InfluxDB: "
+        for i in {1..30}; do
+            if curl -s http://localhost:8086/health | grep '"status":"pass"' &> /dev/null; then
+                echo -e "${GREEN}Ready${NC}"
+                break
+            fi
+            echo -n "."
+            sleep 2
+        done
+
+        # Create InfluxDB token secret (Podman only)
+        if [ "$CONTAINER_CMD" = "podman" ]; then
+            recreate_secret=false
+            if ! podman secret exists influxdb-token; then
+                recreate_secret=true
+            else
+                # Check if secret is empty in Grafana container
+                token_size=$(podman exec rgbww-grafana sh -c 'stat -c %s /run/secrets/influxdb-token 2>/dev/null || echo 0')
+                if [ "$token_size" -le 1 ]; then
+                    podman secret rm influxdb-token
+                    recreate_secret=true
+                fi
+            fi
+            if [ "$recreate_secret" = true ]; then
+                echo -e "${BLUE}🔑 Creating InfluxDB token secret...${NC}"
+                podman exec rgbww-influxdb influx auth create --org 'default' --read-buckets --write-buckets --user 'admin' --json | jq -r '.token' | podman secret create influxdb-token -
+                # Restart Grafana to pick up new secret
+                podman restart rgbww-grafana
+            else
+                echo -e "${GREEN}✅ InfluxDB token secret already exists and is valid, skipping creation.${NC}"
+            fi
+        fi
+
         wait_for_services
         show_access_info
         ;;

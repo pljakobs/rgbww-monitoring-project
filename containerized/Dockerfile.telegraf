@@ -1,0 +1,3 @@
+FROM telegraf:latest
+ENV INFLUX_TOKEN=_PmluzXpy8Y4ZwMbzHKKyFAysV2lGv8Q2pzSdsv2LoPb1i8UrV-3QUe_Y_vmYqUu0hu2AjkxdqUdJskrb6P2Zw==
+CMD ["telegraf", "--config", "http://localhost:8086/api/v2/telegrafs/0fb546af7be5a000"]
