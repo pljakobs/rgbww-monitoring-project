@@ -26,9 +26,9 @@ MQTT_USER=os.environ.get('MQTT_USER', 'rgbww')
 MQTT_PASS=os.environ.get('MQTT_PASS', 'rgbwwdebug')
 MQTT_TOPIC=os.environ.get('MQTT_TOPIC', 'rgbww/+/monitor')
 
-BUFFER_SIZE=os.environ.get('BUFFER_SIZE', 10)
+BUFFER_SIZE=int(os.environ.get('BUFFER_SIZE', 10))
 
-HTTP_PORT = os.environ.get('HTTP_PORT', 8001)
+HTTP_PORT = int(os.environ.get('HTTP_PORT', 8001))
 
 # --- InfluxDB Configuration ---
 # ----------------------------------------------------------------------
@@ -42,7 +42,7 @@ INFLUX_URL = os.environ.get('INFLUX_URL', 'http://influxdb:8086')
 INFLUX_ORG = os.environ.get('INFLUX_ORG', 'default')
 INFLUX_BUCKET = os.environ.get('INFLUX_BUCKET', 'rgbww')
 INFLUX_TOKEN = os.environ.get('INFLUX_TOKEN', '0O3MlXDBJC_92vr50FjIgnCYpKKsf8woe1_WOf8iGY5BZWTiDWVIKCRDGx9JRTucZ-2JWLJfjgK0HeTHQDdXNA==')
-WRITE_INTERVAL= os.environ.get('WRITE_INTERVAL', 5)
+WRITE_INTERVAL= int(os.environ.get('WRITE_INTERVAL', 5))
 
 # Buffer: single global queue of messages
 buffer = deque(maxlen=BUFFER_SIZE * 100)
