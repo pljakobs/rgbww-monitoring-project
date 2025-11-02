@@ -7,6 +7,8 @@ set -e
 
 echo "🚀 Starting Grafana..."
 
+export INFLUXDB_TOKEN="${INFLUXDB_TOKEN}"
+
 # Start Grafana in background
 /run.sh "$@" &
 GRAFANA_PID=$!
