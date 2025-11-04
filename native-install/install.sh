@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# RGBWW IoT Device Monitoring System Installer
-# Automated installation of Prometheus-based IoT device discovery and monitoring
+# RGBWW MQTT JSON Bridge Installer for Native Deployment
+# Installs the MQTT-to-InfluxDB bridge for IoT device monitoring
 
 set -e
 
@@ -25,10 +25,10 @@ log() {
 print_header() {
     echo -e "${BLUE}"
     echo "╔══════════════════════════════════════════════════════╗"
-    echo "║         RGBWW IoT Monitoring System Installer       ║"  
+    echo "║       RGBWW MQTT JSON Bridge Native Installer       ║"  
     echo "║                                                      ║"
-    echo "║  Automated Prometheus-based IoT device discovery    ║"
-    echo "║  and monitoring with device ID primary keys         ║"
+    echo "║  MQTT-to-InfluxDB bridge for IoT device monitoring  ║"
+    echo "║  with centralized logging and telemetry collection  ║"
     echo "╚══════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo ""
@@ -60,10 +60,12 @@ check_system() {
     fi
     log "   ✅ systemd detected"
     
-    # Check if running in container
-    if [[ -f /.dockerenv ]]; then
-        log "${YELLOW}⚠️  Running in Docker container - some features may not work${NC}"
+    # Check Python 3
+    if ! command -v python3 >/dev/null 2>&1; then
+        log "${RED}❌ Python 3 is required${NC}"
+        exit 1
     fi
+    log "   ✅ Python 3 detected: $(python3 --version)"
 }
 
 install_dependencies() {
@@ -74,11 +76,10 @@ install_dependencies() {
     
     # Install required packages
     local packages=(
+        "python3"
+        "python3-pip"
+        "python3-venv"
         "curl"
-        "jq"
-        "wget"
-        "prometheus"
-        "logrotate"
     )
     
     for package in "${packages[@]}"; do
@@ -91,127 +92,119 @@ install_dependencies() {
     done
 }
 
-install_json_exporter() {
-    log "${BLUE}📊 Installing JSON Exporter...${NC}"
+create_service_user() {
+    log "${BLUE}👤 Setting up rgbww-bridge user...${NC}"
     
-    local version="0.6.0"
-    local arch="linux-amd64"
-    local url="https://github.com/prometheus-community/json_exporter/releases/download/v${version}/json_exporter-${version}.${arch}.tar.gz"
-    
-    # Check if already installed
-    if [[ -f /usr/local/bin/json_exporter ]]; then
-        local current_version=$(/usr/local/bin/json_exporter --version 2>&1 | head -n1 || echo "unknown")
-        log "   ✅ JSON Exporter already installed: $current_version"
-        return
-    fi
-    
-    log "   📥 Downloading JSON Exporter v$version..."
-    cd /tmp
-    wget -q "$url" >> "$LOG_FILE" 2>&1
-    
-    log "   📦 Extracting..."
-    tar -xzf "json_exporter-${version}.${arch}.tar.gz" >> "$LOG_FILE" 2>&1
-    
-    log "   📋 Installing..."
-    cp "json_exporter-${version}.${arch}/json_exporter" /usr/local/bin/
-    chmod +x /usr/local/bin/json_exporter
-    
-    # Clean up
-    rm -rf "json_exporter-${version}.${arch}"*
-    
-    log "   ✅ JSON Exporter installed successfully"
-}
-
-create_prometheus_user() {
-    log "${BLUE}👤 Setting up prometheus user...${NC}"
-    
-    if ! id prometheus >/dev/null 2>&1; then
-        useradd --no-create-home --shell /bin/false prometheus >> "$LOG_FILE" 2>&1
-        log "   ✅ Created prometheus user"
+    if ! id rgbww-bridge >/dev/null 2>&1; then
+        useradd --system --no-create-home --shell /bin/false rgbww-bridge >> "$LOG_FILE" 2>&1
+        log "   ✅ Created rgbww-bridge user"
     else
-        log "   ✅ prometheus user already exists"
+        log "   ✅ rgbww-bridge user already exists"
     fi
 }
 
-install_configs() {
-    log "${BLUE}⚙️  Installing configuration files...${NC}"
+install_mqtt_bridge() {
+    log "${BLUE}📡 Installing MQTT JSON Bridge...${NC}"
     
-    # Create directories
-    mkdir -p /etc/prometheus
+    # Create installation directory
+    mkdir -p /opt/rgbww-bridge
+    mkdir -p /etc/rgbww-bridge
+    mkdir -p /var/log/rgbww-bridge
     
-    # Install config files
-    cp "$SCRIPT_DIR/config/json_exporter.yml" /etc/prometheus/
-    cp "$SCRIPT_DIR/config/prometheus.yml.template" /etc/prometheus/
-    cp "$SCRIPT_DIR/config/logrotate-iot-discovery" /etc/logrotate.d/iot-discovery
+    # Copy the updated importer script
+    cp "$SCRIPT_DIR/../rgbww-importer/mqtt-json-bridge.py" /opt/rgbww-bridge/
+    cp "$SCRIPT_DIR/../rgbww-importer/config.ini" /etc/rgbww-bridge/config.ini.example
     
     # Set permissions
-    chown prometheus:prometheus /etc/prometheus/json_exporter.yml
-    chmod 644 /etc/prometheus/prometheus.yml.template
+    chown -R rgbww-bridge:rgbww-bridge /opt/rgbww-bridge
+    chown -R rgbww-bridge:rgbww-bridge /etc/rgbww-bridge
+    chown -R rgbww-bridge:rgbww-bridge /var/log/rgbww-bridge
+    chmod +x /opt/rgbww-bridge/mqtt-json-bridge.py
     
-    log "   ✅ Configuration files installed"
+    log "   ✅ MQTT JSON Bridge installed"
 }
 
-install_scripts() {
-    log "${BLUE}📝 Installing management scripts...${NC}"
+setup_python_environment() {
+    log "${BLUE}� Setting up Python virtual environment...${NC}"
     
-    # Install scripts
-    cp "$SCRIPT_DIR/scripts/manage-iot-devices.sh" /etc/prometheus/
-    cp "$SCRIPT_DIR/scripts/iot-status.sh" /etc/prometheus/
+    # Create virtual environment
+    python3 -m venv /opt/rgbww-bridge/venv >> "$LOG_FILE" 2>&1
     
-    # Make executable
-    chmod +x /etc/prometheus/manage-iot-devices.sh
-    chmod +x /etc/prometheus/iot-status.sh
+    # Install Python dependencies
+    /opt/rgbww-bridge/venv/bin/pip install --upgrade pip >> "$LOG_FILE" 2>&1
+    /opt/rgbww-bridge/venv/bin/pip install paho-mqtt influxdb-client flask configparser >> "$LOG_FILE" 2>&1
     
-    log "   ✅ Management scripts installed"
+    # Set permissions
+    chown -R rgbww-bridge:rgbww-bridge /opt/rgbww-bridge/venv
+    
+    log "   ✅ Python environment configured"
 }
 
-install_systemd_services() {
-    log "${BLUE}🔧 Installing systemd services...${NC}"
+install_systemd_service() {
+    log "${BLUE}🔧 Installing systemd service...${NC}"
     
-    # Install service files
-    cp "$SCRIPT_DIR/systemd/json_exporter.service" /etc/systemd/system/
-    cp "$SCRIPT_DIR/systemd/iot-discovery.service" /etc/systemd/system/
-    cp "$SCRIPT_DIR/systemd/iot-discovery.timer" /etc/systemd/system/
+    # Create systemd service file
+    cat > /etc/systemd/system/rgbww-bridge.service << 'EOF'
+[Unit]
+Description=RGBWW MQTT JSON Bridge
+After=network.target
+
+[Service]
+Type=simple
+User=rgbww-bridge
+Group=rgbww-bridge
+WorkingDirectory=/opt/rgbww-bridge
+ExecStart=/opt/rgbww-bridge/venv/bin/python /opt/rgbww-bridge/mqtt-json-bridge.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
     
     # Reload systemd
     systemctl daemon-reload >> "$LOG_FILE" 2>&1
     
-    log "   ✅ Systemd services installed"
+    log "   ✅ Systemd service installed"
 }
 
-enable_services() {
-    log "${BLUE}🚀 Enabling and starting services...${NC}"
+setup_configuration() {
+    log "${BLUE}⚙️  Setting up configuration...${NC}"
     
-    # Enable and start Prometheus (if not already running)
-    if ! systemctl is-active prometheus >/dev/null 2>&1; then
-        systemctl enable prometheus >> "$LOG_FILE" 2>&1
-        systemctl start prometheus >> "$LOG_FILE" 2>&1
-        log "   ✅ Prometheus enabled and started"
+    if [[ ! -f /etc/rgbww-bridge/config.ini ]]; then
+        log "   📝 Creating default configuration..."
+        cat > /etc/rgbww-bridge/config.ini << 'EOF'
+# MQTT JSON Bridge Configuration for Native Deployment
+# Customize these settings for your environment
+
+[mqtt]
+broker = your-mqtt-broker.com
+port = 1883
+username = your-username
+password = your-password
+stats_topic = rgbww/+/monitor
+log_topic = rgbww/+/log
+
+[application]
+buffer_size = 10
+http_port = 8001
+write_interval = 5
+stats_interval = 300
+
+[influxdb]
+# Update these settings for your local InfluxDB installation
+url = http://localhost:8086
+org = your-org
+bucket = rgbww
+token = your-influxdb-token-here
+EOF
+        chown rgbww-bridge:rgbww-bridge /etc/rgbww-bridge/config.ini
+        log "   ✅ Default configuration created"
     else
-        log "   ✅ Prometheus already running"
+        log "   ✅ Configuration file already exists"
     fi
-    
-    # Enable and start JSON Exporter
-    systemctl enable json_exporter >> "$LOG_FILE" 2>&1
-    systemctl start json_exporter >> "$LOG_FILE" 2>&1
-    log "   ✅ JSON Exporter enabled and started"
-    
-    # Enable discovery timer (but don't start until devices are configured)
-    systemctl enable iot-discovery.timer >> "$LOG_FILE" 2>&1
-    log "   ✅ IoT Discovery timer enabled (not started yet)"
-}
-
-setup_initial_config() {
-    log "${BLUE}📋 Setting up initial configuration...${NC}"
-    
-    # Initialize empty device files
-    touch /etc/prometheus/iot-devices.txt
-    echo "{}" > /etc/prometheus/iot-device-metadata.json
-    
-    # Set permissions
-    chown prometheus:prometheus /etc/prometheus/iot-device*.txt /etc/prometheus/iot-device*.json 2>/dev/null || true
-    
-    log "   ✅ Initial configuration files created"
 }
 
 print_completion() {
@@ -222,31 +215,35 @@ print_completion() {
     echo -e "${NC}"
     echo ""
     
-    log "${GREEN}🎉 RGBWW IoT Monitoring System installed successfully!${NC}"
+    log "${GREEN}🎉 RGBWW MQTT JSON Bridge installed successfully!${NC}"
     echo ""
     
     echo -e "${YELLOW}📋 Next Steps:${NC}"
-    echo "1. Discover your IoT devices:"
-    echo "   /etc/prometheus/manage-iot-devices.sh discover <device_ip>"
+    echo "1. Configure the bridge:"
+    echo "   sudo nano /etc/rgbww-bridge/config.ini"
     echo ""
-    echo "2. Start automated discovery:"
-    echo "   systemctl start iot-discovery.timer"
+    echo "2. Update MQTT and InfluxDB settings in the config file"
     echo ""
-    echo "3. Check system status:"
-    echo "   /etc/prometheus/iot-status.sh"
+    echo "3. Start the service:"
+    echo "   sudo systemctl enable rgbww-bridge"
+    echo "   sudo systemctl start rgbww-bridge"
     echo ""
-    echo "4. Access Prometheus:"
-    echo "   http://localhost:9090"
+    echo "4. Check service status:"
+    echo "   sudo systemctl status rgbww-bridge"
+    echo ""
+    echo "5. View logs:"
+    echo "   sudo journalctl -u rgbww-bridge -f"
     echo ""
     
-    echo -e "${BLUE}📚 Documentation:${NC}"
-    echo "   /root/rgbww/README.md"
+    echo -e "${BLUE}� Service Endpoints:${NC}"
+    echo "   HTTP metrics: http://localhost:8001/metrics.json"
     echo ""
     
-    echo -e "${BLUE}📊 Useful Commands:${NC}"
-    echo "   /etc/prometheus/manage-iot-devices.sh list    # List devices"
-    echo "   journalctl -u iot-discovery.service -f       # Follow logs"
-    echo "   systemctl status iot-discovery.timer         # Timer status"
+    echo -e "${BLUE}� Files Created:${NC}"
+    echo "   Service: /opt/rgbww-bridge/mqtt-json-bridge.py"
+    echo "   Config:  /etc/rgbww-bridge/config.ini"
+    echo "   Systemd: /etc/systemd/system/rgbww-bridge.service"
+    echo "   Logs:    /var/log/rgbww-bridge/"
     echo ""
     
     log "${GREEN}✅ Installation completed at $INSTALL_DATE${NC}"
@@ -257,20 +254,18 @@ print_completion() {
 main() {
     print_header
     
-    log "🚀 Starting RGBWW IoT Monitoring System installation..."
+    log "🚀 Starting RGBWW MQTT JSON Bridge installation..."
     log "📄 Installation log: $LOG_FILE"
     echo ""
     
     check_root
     check_system
     install_dependencies
-    install_json_exporter
-    create_prometheus_user
-    install_configs
-    install_scripts
-    install_systemd_services
-    enable_services
-    setup_initial_config
+    create_service_user
+    install_mqtt_bridge
+    setup_python_environment
+    install_systemd_service
+    setup_configuration
     
     echo ""
     print_completion

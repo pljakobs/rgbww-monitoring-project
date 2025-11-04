@@ -1,7 +1,15 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY influxdb-importer.py ./
-RUN pip install --no-cache-dir requests paho-mqtt influxdb-client flask
 
-CMD ["python", "influxdb-importer.py"]
+# Copy the updated importer script from the rgbww-importer folder
+COPY ../rgbww-importer/mqtt-json-bridge.py ./
+COPY ../rgbww-importer/config.ini ./config.ini.template
+
+# Install required Python packages
+RUN pip install --no-cache-dir paho-mqtt influxdb-client flask configparser
+
+# Create directory for external config
+RUN mkdir -p /app/config
+
+CMD ["python", "mqtt-json-bridge.py"]

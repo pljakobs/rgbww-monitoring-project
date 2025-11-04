@@ -1,71 +1,88 @@
 # 🎯 RGBWW IoT Device Monitoring System
 
-A comprehensive monitoring solution for RGBWW IoT devices with automatic network discovery, Prometheus metrics collection, and Grafana dashboards.
+A comprehensive monitoring solution for RGBWW IoT devices with MQTT data collection, InfluxDB storage, and Grafana dashboards. Supports both containerized and native deployments using a unified MQTT JSON bridge.
 
 ## ✨ Features
 
-- **🔍 Automatic Device Discovery**: Network topology crawling via `/hosts` endpoints
-- **🔑 Stable Device IDs**: Uses device IDs as primary keys for consistent metrics
-- **📊 Prometheus Integration**: Collects metrics from device `/info` endpoints  
-- **📈 Grafana Dashboards**: Pre-configured dashboards for monitoring and visualization
-- **🌐 Network Topology Mapping**: Discovers entire device networks automatically
-- **⚡ Automated Scheduling**: 30-minute discovery intervals
-- **📦 Multiple Deployment Options**: Native installation or containerized
+- **📡 MQTT Data Collection**: Collects telemetry and log data from RGBWW IoT devices
+- **💾 InfluxDB Storage**: Time-series database for efficient metric storage  
+- **📊 Grafana Dashboards**: Pre-configured dashboards for device monitoring
+- **🔧 Unified Importer**: Single MQTT-to-InfluxDB bridge for both deployment types
+- **📋 Device Logs**: Centralized log collection and analysis
+- **⚡ Real-time Metrics**: Live device telemetry and status monitoring
+- **🔑 Device ID Tagging**: Stable device identification across IP changes
 
 ## 🚀 Quick Start
 
-### Option 1: Native Installation (Recommended for LXC/Limited Environments)
+### Option 1: Containerized Deployment (Recommended)
+
+```bash
+cd containerized/
+# Copy and edit configuration
+cp rgbww-importer-config.ini.example rgbww-importer-config.ini
+# Edit with your MQTT and InfluxDB settings
+nano rgbww-importer-config.ini
+# Start all services
+docker-compose up -d
+```
+
+### Option 2: Native Installation
 
 ```bash
 cd native-install/
 sudo ./install.sh
-```
-
-### Option 2: Containerized (Docker/Podman)
-
-```bash
-cd containerized/
-export INITIAL_CONTROLLER_IP=192.168.1.100  # Your IoT device IP
-./rgbww-monitor.sh start
+# Edit configuration
+sudo nano /etc/rgbww-bridge/config.ini
+# Start service
+sudo systemctl enable rgbww-bridge
+sudo systemctl start rgbww-bridge
 ```
 
 ## 📊 What You Get
 
-### Monitored Metrics
+### MQTT Data Collection
 
-| Metric | Description | Labels |
-|--------|-------------|---------|
-| `device_info` | Static device information | `deviceid`, `device_name`, `current_rom`, `git_version`, `ip` |
-| `device_uptime_seconds` | Device uptime in seconds | `deviceid` |
-| `device_heap_free_bytes` | Available heap memory | `deviceid` |
-| `device_connected` | Connection status (1=online, 0=offline) | `deviceid` |
+| Topic Pattern | Purpose | Storage |
+|---------------|---------|---------|
+| `rgbww/+/monitor` | Device telemetry data | `rgbww_debug_data` measurement |
+| `rgbww/+/log` | Device log messages | `rgbww_log` measurement |
+
+### InfluxDB Measurements
+
+- **rgbww_debug_data**: Device telemetry with device ID tags
+  - Fields: `uptime`, `freeHeap`, `mdns_received`, etc.
+  - Tags: `device` (chip ID)
+- **rgbww_log**: Device log messages  
+  - Fields: `message` (log content)
+  - Tags: `id` (chip ID)
 
 ### Pre-configured Dashboards
 
 - **📋 Device Overview**: Complete inventory with status, memory, uptime
-- **🗺️ Network Topology**: Geographic and network visualization
+- **📝 Device Logs**: Centralized log viewer with filtering by device
 - **📈 Historical Trends**: Time-series analysis of device metrics
-- **⚠️ Alerting**: Built-in alerts for offline devices and low memory
+- **⚠️ Alerting**: Built-in alerts for device issues
 
 ## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   IoT Devices   │    │   JSON Exporter  │    │   Prometheus    │
-│                 │    │                  │    │                 │
-│ /info endpoint  │◄───┤ Queries devices  │◄───┤ Scrapes metrics │
-│ /config endpoint│    │ Converts JSON    │    │ Stores data     │
-│ /hosts endpoint │    │ to metrics       │    │                 │
+│   IoT Devices   │    │  MQTT JSON       │    │   InfluxDB      │
+│                 │    │  Bridge          │    │                 │
+│ MQTT telemetry  │───►│                  │───►│ Time-series     │
+│ MQTT logs       │    │ Flattens JSON    │    │ storage         │
+│                 │    │ Device ID tags   │    │                 │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
-         ▲                        ▲                        ▲
-         │                        │                        │
-         └────────────────────────┴────────────────────────┴──────┐
-                            Discovery Script (30min timer)         │
-                                                                   ▼
-                                                    ┌─────────────────┐
-                                                    │    Grafana      │
-                                                    │   Dashboards    │
-                                                    └─────────────────┘
+                                ▲                        ▲
+                                │                        │
+                                ▼                        │
+                      HTTP Metrics Endpoint              │
+                      (http://localhost:8001)            │
+                                                         ▼
+                                                ┌─────────────────┐
+                                                │    Grafana      │
+                                                │   Dashboards    │
+                                                └─────────────────┘
 ```
 
 ## 📁 Project Structure
@@ -73,232 +90,258 @@ export INITIAL_CONTROLLER_IP=192.168.1.100  # Your IoT device IP
 ```
 rgbww-monitoring-project/
 ├── README.md                    # This file
-├── LICENSE                      # MIT License
+├── LICENSE                      # License information  
 ├── CHANGELOG.md                 # Version history
-├── native-install/              # Native system installation
-│   ├── install.sh              # One-command installer
-│   ├── uninstall.sh            # Complete removal
-│   ├── config/                 # Configuration files
-│   ├── systemd/                # Service definitions
-│   └── scripts/                # Management scripts
-└── containerized/              # Docker/Podman deployment
-    ├── docker-compose.yml      # Multi-service orchestration
-    ├── rgbww-monitor.sh        # Container management script
-    ├── prometheus/             # Custom Prometheus image
-    ├── json-exporter/          # JSON Exporter image
-    └── grafana/                # Grafana with dashboards
+├── rgbww-importer/              # Unified MQTT JSON bridge
+│   ├── mqtt-json-bridge.py     # Main bridge application
+│   ├── config.ini              # Example configuration
+│   ├── install.sh              # Local installer
+│   └── README.md               # Bridge documentation
+├── containerized/              # Docker deployment
+│   ├── docker-compose.yml      # Multi-service orchestration
+│   ├── Dockerfile.influxdb_importer # Updated importer image
+│   ├── rgbww-importer-config.ini    # Container configuration
+│   └── grafana/                # Grafana with dashboards
+└── native-install/             # Native system installation
+    ├── install.sh              # Native installer
+    ├── uninstall.sh            # Complete removal
+    └── README.md               # Native install docs
 ```
 
-## 🔧 Device Discovery
+## 🔧 Configuration
 
-### How It Works
+### MQTT Settings
+```ini
+[mqtt]
+broker = your-mqtt-broker.com
+port = 1883
+username = your-username
+password = your-password
+stats_topic = rgbww/+/monitor
+log_topic = rgbww/+/log
+```
 
-1. **Initial Seed**: Starts with one known device IP or network scan
-2. **Topology Crawling**: Queries `/hosts` endpoint on each discovered device
-3. **Multi-Round Discovery**: Continues until no new devices are found
-4. **Metadata Collection**: Fetches device names from `/config` endpoint
-5. **Stable Identification**: Uses device IDs from `/info` as primary keys
-
-### Device Endpoints
-
-| Endpoint | Purpose | Data Extracted |
-|----------|---------|----------------|
-| `/info` | Device status | `uptime`, `heap_free`, `deviceid`, `current_rom`, `git_version` |
-| `/config` | Device configuration | `device_name` |
-| `/hosts` | Network topology | IP addresses of connected devices |
+### InfluxDB Settings
+```ini
+[influxdb]
+url = http://localhost:8086        # For native
+# url = http://influxdb:8086       # For containers  
+org = your-organization
+bucket = rgbww
+token = your-influxdb-token
+```
 
 ## 🛠️ Installation Guide
 
 ### Prerequisites
 
-**For Native Installation:**
-- Linux system with systemd
-- Root access
-- Network access to IoT devices
-- Dependencies: `curl`, `jq` (auto-installed)
-
 **For Containerized:**
-- Docker or Podman with docker-compose
-- Ports 3000, 7979, 9090 available
-- Initial controller IP or network range
+- Docker and Docker Compose
+- MQTT broker access
+- InfluxDB token (generated during setup)
+
+**For Native:**
+- Linux system with systemd
+- Python 3.7+
+- MQTT broker access
+- Local or remote InfluxDB instance
+
+### Containerized Setup
+
+```bash
+# 1. Clone repository
+git clone <repository-url>
+cd rgbww-monitoring-project/containerized/
+
+# 2. Configure MQTT and InfluxDB settings
+cp rgbww-importer-config.ini.example rgbww-importer-config.ini
+nano rgbww-importer-config.ini
+
+# 3. Start services
+docker-compose up -d
+
+# 4. Access Grafana at http://localhost:3000 (admin/rgbww123)
+# 5. Get InfluxDB token from http://localhost:8086
+```
 
 ### Native Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-username/rgbww-monitoring.git
-cd rgbww-monitoring/native-install/
+# 1. Clone repository
+git clone <repository-url>
+cd rgbww-monitoring-project/native-install/
 
-# Run installer
+# 2. Run installer
 sudo ./install.sh
 
-# Check status
-sudo systemctl status json_exporter iot-discovery.timer
-```
+# 3. Configure bridge
+sudo nano /etc/rgbww-bridge/config.ini
 
-### Containerized Installation
+# 4. Start service
+sudo systemctl enable rgbww-bridge
+sudo systemctl start rgbww-bridge
 
-```bash
-# Clone and setup
-git clone https://github.com/your-username/rgbww-monitoring.git
-cd rgbww-monitoring/containerized/
-
-# Configure initial controller
-export INITIAL_CONTROLLER_IP=192.168.1.100
-
-# Start stack
-./rgbww-monitor.sh start
-
-# Access Grafana: http://localhost:3000 (admin/rgbww123)
+# 5. Check status
+sudo systemctl status rgbww-bridge
 ```
 
 ## 📈 Usage Examples
 
-### Manual Device Management
+### Service Management
 
 ```bash
-# Add device manually
-sudo /etc/prometheus/manage-iot-devices.sh add 192.168.1.100
+# Native installation
+sudo systemctl status rgbww-bridge
+sudo journalctl -u rgbww-bridge -f
+sudo systemctl restart rgbww-bridge
 
-# Discover all devices from one known device
-sudo /etc/prometheus/manage-iot-devices.sh discover 192.168.1.100
-
-# List all discovered devices
-sudo /etc/prometheus/manage-iot-devices.sh list
-
-# Check system status
-sudo /etc/prometheus/iot-status.sh
+# Containerized
+docker-compose logs -f influxdb_importer
+docker-compose restart influxdb_importer
+docker-compose ps
 ```
 
-### Prometheus Queries
+### HTTP Metrics Endpoint
 
-```promql
-# Devices with low memory
-device_heap_free_bytes < 10240
+```bash
+# Check collected metrics
+curl http://localhost:8001/metrics.json
 
-# Average uptime by ROM version
-avg by (current_rom) (device_uptime_seconds)
+# View with formatting
+curl -s http://localhost:8001/metrics.json | python3 -m json.tool
+```
 
-# Device connectivity over time
-rate(device_connected[5m])
+### InfluxDB Flux Queries
 
-# Count devices by network
-count by (ip) (device_info)
+```flux
+// Get all device logs
+from(bucket: "rgbww")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "rgbww_log")
+
+// Get device telemetry for specific device
+from(bucket: "rgbww")
+  |> range(start: -1h)
+  |> filter(fn: (r) => 
+      r._measurement == "rgbww_debug_data" and
+      r.device == "123456"
+  )
 ```
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-**No devices discovered:**
-- Check network connectivity: `curl http://<device-ip>/info`
-- Verify initial controller IP is reachable
-- Check discovery logs: `journalctl -u iot-discovery.service`
+**Bridge not connecting to MQTT:**
+- Check broker connectivity: `telnet mqtt-broker 1883`
+- Verify credentials in configuration
+- Check firewall rules
 
-**JSON Exporter not working:**
-- Test configuration: `systemctl status json_exporter`
-- Check device endpoints return valid JSON
-- Verify port 7979 is accessible
+**No data in InfluxDB:**
+- Verify InfluxDB token and permissions
+- Check bucket name and organization
+- Test InfluxDB connectivity
 
-**Grafana dashboards not loading:**
-- Check Prometheus connection in Grafana data sources
-- Verify metrics are being collected: `curl http://localhost:9090/api/v1/query?query=device_info`
+**Service crashes:**
+- Check logs: `journalctl -u rgbww-bridge`
+- Verify Python dependencies
+- Check configuration file syntax
 
-### Log Locations
+### Log Analysis
 
-- **Discovery**: `journalctl -u iot-discovery.service`
-- **JSON Exporter**: `journalctl -u json_exporter`
-- **Prometheus**: `journalctl -u prometheus`
-- **Installation**: `/tmp/rgbww-install.log`
+```bash
+# Native installation logs
+sudo journalctl -u rgbww-bridge --since "1 hour ago"
+sudo journalctl -u rgbww-bridge | grep -i error
+
+# Container logs
+docker-compose logs influxdb_importer --since 1h
+docker-compose logs influxdb_importer | grep ERROR
+```
 
 ## 🎨 Customization
 
-### Adding Custom Metrics
+### Adding Custom Fields
 
-Edit `/etc/prometheus/json_exporter.yml` to extract additional fields from device endpoints.
+Edit the bridge configuration to handle additional MQTT topics or modify JSON processing for new device fields.
 
 ### Custom Dashboards
 
-1. Create dashboard in Grafana
+1. Create dashboard in Grafana UI
 2. Export JSON
-3. Save to `grafana/dashboards/` directory
-4. Restart Grafana
+3. Save to `grafana/dashboards/` directory  
+4. Restart Grafana container
 
-### Discovery Interval
+### Buffer and Performance Tuning
 
-```bash
-# Change discovery frequency
-sudo systemctl edit iot-discovery.timer
-
-# Add:
-[Timer]
-OnCalendar=
-OnCalendar=*:0/15  # Every 15 minutes
+```ini
+[application]
+buffer_size = 20        # Increase for high-volume environments
+write_interval = 10     # Adjust write frequency
+http_port = 8001       # Change if port conflicts
 ```
 
 ## 🚀 Production Deployment
 
-### Security Recommendations
+### Security Considerations
 
-- Change default Grafana password
-- Configure HTTPS/TLS certificates
-- Set up authentication (LDAP/OAuth)
-- Configure firewall rules
-- Set up log rotation
+- Use TLS for MQTT connections
+- Secure InfluxDB with proper authentication
+- Configure Grafana with HTTPS and strong passwords
+- Use network segmentation for IoT devices
+- Regular backup of InfluxDB data
 
 ### High Availability
 
-- Use external Prometheus storage
+- Use InfluxDB clustering for redundancy
 - Configure Grafana with external database
-- Set up backup automation
-- Use load balancer for Grafana
+- Deploy multiple bridge instances with load balancing
+- Implement health checks and monitoring
 
-### Monitoring
+### Performance Optimization
 
-- Set up alerting rules
-- Configure notification channels
-- Monitor system resource usage
-- Set up external health checks
+- Tune InfluxDB retention policies
+- Configure appropriate shard durations
+- Monitor system resources (CPU, memory, disk)
+- Use SSD storage for InfluxDB
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
+3. Test changes with both deployment methods
+4. Update documentation as needed
 5. Submit pull request
 
 ### Development Setup
 
 ```bash
-# Local development
+# Test native installation
 cd native-install/
 sudo ./install.sh
 
-# Test changes
-sudo /etc/prometheus/manage-iot-devices.sh discover
-sudo /etc/prometheus/iot-status.sh
+# Test containerized deployment  
+cd containerized/
+docker-compose up -d
 ```
 
 ## 📝 License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-**Copyleft Notice**: This is free software under a copyleft license. Any derivative works must also be released under GPL v3 or later, ensuring that improvements remain free and open source for the community.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🎉 Acknowledgments
 
-- Prometheus community for excellent monitoring tools
+- InfluxDB community for excellent time-series database
 - Grafana team for beautiful visualization platform
-- JSON Exporter for flexible metric conversion
-- RGBWW IoT device developers for providing accessible APIs
+- Paho MQTT Python client for reliable MQTT connectivity
+- RGBWW IoT device developers for providing MQTT interfaces
 
 ## 📞 Support
 
-- **Documentation**: See individual README files in each deployment directory
-- **Issues**: Report bugs via GitHub issues
-- **Discussions**: Use GitHub discussions for questions
-- **Quick Help**: Check troubleshooting section above
+- **Documentation**: See individual README files in each directory
+- **Issues**: Report bugs via GitHub issues  
+- **Configuration Help**: Check troubleshooting section
+- **MQTT Topics**: Ensure devices publish to `rgbww/{device_id}/monitor` and `rgbww/{device_id}/log`
 
 ---
 

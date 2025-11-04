@@ -1,55 +1,61 @@
 # 🎯 RGBWW IoT Monitoring Stack
 
-**One-command deployment** of a complete IoT monitoring solution with automatic device discovery, Prometheus metrics, and beautiful Grafana dashboards.
+**One-command deployment** of a complete IoT monitoring solution with MQTT data collection, InfluxDB storage, and beautiful Grafana dashboards.
 
 ## ✨ What You Get
 
-- **🔍 Automatic Device Discovery**: Finds all RGBWW IoT devices on your network
-- **📊 Prometheus Monitoring**: Collects metrics from device `/info` endpoints  
-- **📈 Grafana Dashboards**: Pre-configured dashboards for device inventory and network topology
-- **🔧 JSON Exporter**: Converts device JSON responses to Prometheus metrics
-- **🌐 Network Topology**: Discovers devices through `/hosts` endpoint crawling
-- **🔑 Device ID Primary Keys**: Stable metrics across IP changes
-- **⚡ 30-min Auto-Discovery**: Continuous network scanning for new devices
+- **� MQTT Data Collection**: Collects telemetry and log data from RGBWW IoT devices
+- **� InfluxDB Storage**: Time-series database for efficient metric storage
+- **� Grafana Dashboards**: Pre-configured dashboards for device monitoring
+- **🔧 Configurable Importer**: Flexible MQTT-to-InfluxDB bridge with external config
+- **📋 Device Logs**: Centralized log collection and analysis
+- **⚡ Real-time Metrics**: Live device telemetry and status monitoring
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Network access to RGBWW IoT devices
-- Ports 3000, 7979, and 9090 available
-- **Either**: IP address of at least one RGBWW controller
-- **Or**: Network range to scan for devices (requires nmap in container)
+- MQTT broker with RGBWW device data
+- InfluxDB token (generated during setup)
+
+### Configuration Setup
+
+1. **Copy and customize the config file:**
+   ```bash
+   cp rgbww-importer-config.ini.example rgbww-importer-config.ini
+   # Edit the config file with your settings
+   ```
+
+2. **Update MQTT settings in `rgbww-importer-config.ini`:**
+   ```ini
+   [mqtt]
+   broker = your-mqtt-broker.com
+   username = your-username
+   password = your-password
+   ```
+
+3. **Set InfluxDB token after initial setup:**
+   ```bash
+   # Start services first to generate InfluxDB
+   docker-compose up -d influxdb
+   
+   # Get token from InfluxDB UI at http://localhost:8086
+   # Update rgbww-importer-config.ini with the token
+   ```
 
 ### One-Command Deployment
 
-**Option 1: With Known Controller IP**
 ```bash
-# Set initial controller and start
-export INITIAL_CONTROLLER_IP=192.168.1.100
-./rgbww-monitor.sh start
-```
-
-**Option 2: With Network Range Scan**
-```bash
-# Set network range and start  
-export NETWORK_RANGE=192.168.1.0/24
-./rgbww-monitor.sh start
-```
-
-**Option 3: Manual Setup**
-```bash
-# Start without automatic discovery
-./rgbww-monitor.sh start
-# Then add devices manually via Prometheus logs
+# Start all services
+docker-compose up -d
 ```
 
 That's it! The system will:
-1. ✅ Build custom Docker images
-2. ✅ Start Prometheus, Grafana, and JSON Exporter
-3. ✅ Automatically discover IoT devices
-4. ✅ Set up pre-configured dashboards
+1. ✅ Start InfluxDB with persistent storage
+2. ✅ Start Grafana with pre-configured dashboards  
+3. ✅ Start MQTT importer with your config
+4. ✅ Begin collecting device data automatically
 
 ## 📊 Access Your Monitoring
 

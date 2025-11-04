@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# RGBWW IoT Device Monitoring System Uninstaller
-# Removes all components of the RGBWW monitoring system
+# RGBWW MQTT JSON Bridge Uninstaller for Native Deployment
+# Removes the MQTT-to-InfluxDB bridge and all associated files
 
 set -e
 
@@ -22,11 +22,11 @@ log() {
 }
 
 print_header() {
-    echo -e "${RED}"
+    echo -e "${BLUE}"
     echo "╔══════════════════════════════════════════════════════╗"
-    echo "║       RGBWW IoT Monitoring System Uninstaller       ║"  
+    echo "║       RGBWW MQTT JSON Bridge Uninstaller            ║"  
     echo "║                                                      ║"
-    echo "║           ⚠️  This will remove all components        ║"
+    echo "║  Removes MQTT-to-InfluxDB bridge and all files      ║"
     echo "╚══════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo ""
@@ -40,151 +40,114 @@ check_root() {
 }
 
 confirm_uninstall() {
-    echo -e "${YELLOW}⚠️  WARNING: This will remove:${NC}"
-    echo "   • IoT Discovery timer and services"
-    echo "   • JSON Exporter service"
-    echo "   • Configuration files in /etc/prometheus/"
-    echo "   • Management scripts"
-    echo "   • Device lists and metadata"
+    echo -e "${YELLOW}⚠️  This will completely remove the RGBWW MQTT JSON Bridge${NC}"
+    echo "   - Stop and disable the service"
+    echo "   - Remove all files and directories"
+    echo "   - Delete the service user"
+    echo "   - Remove systemd service definition"
     echo ""
-    echo -e "${YELLOW}📊 Prometheus itself will NOT be removed${NC}"
+    read -p "Are you sure you want to continue? (y/N): " -n 1 -r
     echo ""
-    
-    read -p "Are you sure you want to uninstall? (yes/no): " -r
-    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-        log "Uninstall cancelled by user"
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "🔄 Uninstall cancelled by user"
         exit 0
     fi
-    echo ""
 }
 
-stop_services() {
-    log "${BLUE}🔧 Stopping services...${NC}"
+stop_and_disable_service() {
+    log "${BLUE}� Stopping and disabling service...${NC}"
     
-    # Stop and disable timer
-    if systemctl is-active iot-discovery.timer >/dev/null 2>&1; then
-        systemctl stop iot-discovery.timer >> "$LOG_FILE" 2>&1
-        log "   ✅ Stopped iot-discovery.timer"
+    if systemctl is-active rgbww-bridge >/dev/null 2>&1; then
+        systemctl stop rgbww-bridge >> "$LOG_FILE" 2>&1
+        log "   ✅ Service stopped"
+    else
+        log "   ℹ️  Service was not running"
     fi
     
-    if systemctl is-enabled iot-discovery.timer >/dev/null 2>&1; then
-        systemctl disable iot-discovery.timer >> "$LOG_FILE" 2>&1
-        log "   ✅ Disabled iot-discovery.timer"
-    fi
-    
-    # Stop JSON Exporter
-    if systemctl is-active json_exporter >/dev/null 2>&1; then
-        systemctl stop json_exporter >> "$LOG_FILE" 2>&1
-        log "   ✅ Stopped json_exporter"
-    fi
-    
-    if systemctl is-enabled json_exporter >/dev/null 2>&1; then
-        systemctl disable json_exporter >> "$LOG_FILE" 2>&1
-        log "   ✅ Disabled json_exporter"
+    if systemctl is-enabled rgbww-bridge >/dev/null 2>&1; then
+        systemctl disable rgbww-bridge >> "$LOG_FILE" 2>&1
+        log "   ✅ Service disabled"
+    else
+        log "   ℹ️  Service was not enabled"
     fi
 }
 
-remove_systemd_files() {
-    log "${BLUE}🗑️  Removing systemd files...${NC}"
+remove_systemd_service() {
+    log "${BLUE}🗑️  Removing systemd service...${NC}"
     
-    local files=(
-        "/etc/systemd/system/iot-discovery.service"
-        "/etc/systemd/system/iot-discovery.timer"
-        "/etc/systemd/system/json_exporter.service"
-    )
-    
-    for file in "${files[@]}"; do
-        if [[ -f "$file" ]]; then
-            rm "$file"
-            log "   ✅ Removed $file"
-        fi
-    done
+    if [[ -f /etc/systemd/system/rgbww-bridge.service ]]; then
+        rm /etc/systemd/system/rgbww-bridge.service
+        log "   ✅ Service file removed"
+    else
+        log "   ℹ️  Service file not found"
+    fi
     
     systemctl daemon-reload >> "$LOG_FILE" 2>&1
-    log "   ✅ Reloaded systemd"
+    log "   ✅ Systemd configuration reloaded"
 }
 
-remove_binaries() {
-    log "${BLUE}🗑️  Removing binaries...${NC}"
+remove_files() {
+    log "${BLUE}� Removing application files...${NC}"
     
-    if [[ -f /usr/local/bin/json_exporter ]]; then
-        rm /usr/local/bin/json_exporter
-        log "   ✅ Removed /usr/local/bin/json_exporter"
+    # Remove application directory
+    if [[ -d /opt/rgbww-bridge ]]; then
+        rm -rf /opt/rgbww-bridge
+        log "   ✅ Application directory removed: /opt/rgbww-bridge"
+    else
+        log "   ℹ️  Application directory not found"
+    fi
+    
+    # Remove configuration directory
+    if [[ -d /etc/rgbww-bridge ]]; then
+        rm -rf /etc/rgbww-bridge
+        log "   ✅ Configuration directory removed: /etc/rgbww-bridge"
+    else
+        log "   ℹ️  Configuration directory not found"
+    fi
+    
+    # Remove log directory
+    if [[ -d /var/log/rgbww-bridge ]]; then
+        rm -rf /var/log/rgbww-bridge
+        log "   ✅ Log directory removed: /var/log/rgbww-bridge"
+    else
+        log "   ℹ️  Log directory not found"
     fi
 }
 
-remove_config_files() {
-    log "${BLUE}🗑️  Removing configuration files...${NC}"
+remove_user() {
+    log "${BLUE}👤 Removing service user...${NC}"
     
-    local files=(
-        "/etc/prometheus/json_exporter.yml"
-        "/etc/prometheus/prometheus.yml.template"
-        "/etc/prometheus/manage-iot-devices.sh"
-        "/etc/prometheus/iot-status.sh"
-        "/etc/prometheus/iot-devices.txt"
-        "/etc/prometheus/iot-device-metadata.json"
-        "/etc/prometheus/README.md"
-        "/etc/logrotate.d/iot-discovery"
-    )
-    
-    for file in "${files[@]}"; do
-        if [[ -f "$file" ]]; then
-            rm "$file"
-            log "   ✅ Removed $file"
-        fi
-    done
-}
-
-cleanup_logs() {
-    log "${BLUE}🧹 Cleaning up logs...${NC}"
-    
-    # Clean systemd logs
-    journalctl --vacuum-time=1s --unit=iot-discovery.service >/dev/null 2>&1 || true
-    journalctl --vacuum-time=1s --unit=json_exporter.service >/dev/null 2>&1 || true
-    
-    log "   ✅ Cleaned up systemd logs"
-}
-
-restore_prometheus_config() {
-    log "${BLUE}⚙️  Checking Prometheus configuration...${NC}"
-    
-    if [[ -f /etc/prometheus/prometheus.yml ]]; then
-        # Check if our IoT configuration exists
-        if grep -q "iot-devices" /etc/prometheus/prometheus.yml 2>/dev/null; then
-            log "${YELLOW}⚠️  Found IoT device configuration in prometheus.yml${NC}"
-            log "   Manual cleanup of /etc/prometheus/prometheus.yml may be needed"
-            log "   Consider removing the 'iot-devices' job configuration"
-        else
-            log "   ✅ No IoT configuration found in prometheus.yml"
-        fi
+    if id rgbww-bridge >/dev/null 2>&1; then
+        userdel rgbww-bridge >> "$LOG_FILE" 2>&1
+        log "   ✅ User 'rgbww-bridge' removed"
+    else
+        log "   ℹ️  User 'rgbww-bridge' not found"
     fi
 }
 
 print_completion() {
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════╗"
-    echo "║                Uninstall Complete!                  ║"
+    echo "║               Uninstall Complete!                   ║"
     echo "╚══════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     echo ""
     
-    log "${GREEN}🎉 RGBWW IoT Monitoring System uninstalled successfully!${NC}"
+    log "${GREEN}🎉 RGBWW MQTT JSON Bridge uninstalled successfully!${NC}"
     echo ""
     
     echo -e "${BLUE}📋 What was removed:${NC}"
-    echo "   ✅ IoT Discovery timer and service"
-    echo "   ✅ JSON Exporter service and binary"
-    echo "   ✅ Configuration files"
-    echo "   ✅ Management scripts"
-    echo "   ✅ Device lists and metadata"
-    echo "   ✅ Systemd service files"
-    echo "   ✅ Log files"
+    echo "   ✅ Systemd service: rgbww-bridge"
+    echo "   ✅ Application files: /opt/rgbww-bridge"
+    echo "   ✅ Configuration: /etc/rgbww-bridge"
+    echo "   ✅ Log files: /var/log/rgbww-bridge"
+    echo "   ✅ Service user: rgbww-bridge"
     echo ""
     
-    echo -e "${YELLOW}📋 Manual cleanup needed:${NC}"
-    echo "   • Check /etc/prometheus/prometheus.yml for IoT job config"
-    echo "   • Prometheus service is still running"
-    echo "   • Dependencies (jq, curl) were not removed"
+    echo -e "${YELLOW}� Note:${NC}"
+    echo "   - InfluxDB data was not removed"
+    echo "   - Python packages remain installed"
+    echo "   - System packages (python3, pip) remain installed"
     echo ""
     
     log "${GREEN}✅ Uninstall completed at $UNINSTALL_DATE${NC}"
@@ -195,18 +158,16 @@ print_completion() {
 main() {
     print_header
     
-    log "🗑️  Starting RGBWW IoT Monitoring System uninstall..."
+    log "🗑️  Starting RGBWW MQTT JSON Bridge uninstall..."
     log "📄 Uninstall log: $LOG_FILE"
     echo ""
     
     check_root
     confirm_uninstall
-    stop_services
-    remove_systemd_files
-    remove_binaries
-    remove_config_files
-    cleanup_logs
-    restore_prometheus_config
+    stop_and_disable_service
+    remove_systemd_service
+    remove_files
+    remove_user
     
     echo ""
     print_completion

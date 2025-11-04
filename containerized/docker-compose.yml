@@ -14,8 +14,11 @@ services:
     restart: unless-stopped
     depends_on:
       - influxdb
-    env_file:
-      - influxdb-tokens.env
+    volumes:
+      # Map config file from host filesystem
+      - ./rgbww-importer-config.ini:/app/config.ini:ro
+    environment:
+      - CONFIG_PATH=/app/config.ini
   influxdb:
     image: influxdb:2.7
     container_name: rgbww-influxdb
